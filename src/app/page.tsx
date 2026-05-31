@@ -49,6 +49,14 @@ const STEPS = [
   },
 ] as const;
 
+const FOOTER_LINKS = [
+  { label: "PlayaStays", href: "https://www.playastays.com" },
+  { label: "Playa del Carmen", href: "https://www.playastays.com/Playa-del-Carmen" },
+  { label: "Tulum", href: "https://www.playastays.com/Tulum" },
+  { label: "Cozumel", href: "https://www.playastays.com/Cozumel" },
+  { label: "Puerto Morelos", href: "https://www.playastays.com/Puerto-Morelos" },
+] as const;
+
 export default async function HomePage() {
   const session = await auth();
   if (session?.user) {
@@ -159,7 +167,21 @@ export default async function HomePage() {
       </main>
 
       <footer className="shrink-0 border-t border-border/60 py-3 text-center text-xs text-muted-foreground">
-        PlayaStays · Playa del Carmen · Tulum · Cozumel · Puerto Morelos
+        <p className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
+          {FOOTER_LINKS.map((link, index) => (
+            <span key={link.href} className="inline-flex items-center">
+              {index > 0 && <span className="mx-1.5 text-border">·</span>}
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+              >
+                {link.label}
+              </a>
+            </span>
+          ))}
+        </p>
       </footer>
     </div>
   );
