@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useActionState } from "react";
 import { updateMaintenanceStatus } from "@/lib/actions/maintenance";
 import type { MaintenanceActionState } from "@/lib/actions/maintenance";
@@ -20,6 +21,12 @@ import {
 } from "@/lib/utils/format";
 import { getLocationLabel } from "@/lib/constants/locations";
 
+type MaintenancePhoto = {
+  id: string;
+  url: string;
+  name: string;
+};
+
 type MaintenanceRow = {
   id: string;
   title: string;
@@ -31,6 +38,7 @@ type MaintenanceRow = {
   tenantName?: string | null;
   propertyCode?: string;
   location?: string;
+  photos?: MaintenancePhoto[];
 };
 
 function StatusForm({
@@ -117,6 +125,7 @@ export function MaintenanceTable({
               <TableHead>Title</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Photos</TableHead>
               {editable && <TableHead>Update</TableHead>}
             </TableRow>
           </TableHeader>
@@ -166,6 +175,33 @@ export function MaintenanceTable({
                   >
                     {maintenanceStatusLabel(r.status)}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {r.photos && r.photos.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {r.photos.map((photo) => (
+                        <a
+                          key={photo.id}
+                          href={photo.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block overflow-hidden rounded border"
+                          title={photo.name}
+                        >
+                          <Image
+                            src={photo.url}
+                            alt={photo.name}
+                            width={48}
+                            height={48}
+                            className="h-12 w-12 object-cover"
+                            unoptimized
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 {editable && (
                   <TableCell>

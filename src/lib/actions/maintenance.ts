@@ -3,10 +3,12 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { insertDocumentRecord } from "@/lib/actions/documents";
 import { db } from "@/lib/db";
 import { maintenanceRequests } from "@/lib/db/schema";
 import type { MaintenanceStatus } from "@/lib/db/schema";
 import { getTenantByUserId } from "@/lib/queries/rent-maintenance";
+import { saveUploadedFiles } from "@/lib/utils/upload";
 import {
   maintenanceRequestSchema,
   updateMaintenanceSchema,
@@ -49,14 +51,36 @@ export async function submitMaintenanceRequest(
     return { error: "Please fill in all required fields." };
   }
 
-  await db.insert(maintenanceRequests).values({
-    tenantId: tenant.id,
-    propertyId: tenant.propertyId,
-    title: parsed.data.title.trim(),
-    description: parsed.data.description.trim(),
-    priority: parsed.data.priority,
-    status: "open",
-  });
+  const [request] = await db
+    .insert(maintenanceRequests)
+    .values({
+      tenantId: tenant.id,
+      propertyId: tenant.propertyId,
+      title: parsed.data.title.trim(),
+      description: parsed.data.description.trim(),
+      priority: parsed.data.priority,
+      status: "open",
+    })
+    .returning({ id: maintenanceRequests.id });
+
+  const photoFiles = formData
+    .getAll("photos")
+    .filter((f): f is File => f instanceof File && f.size > 0)
+    .slice(0, 5);
+
+  if (request && photoFiles.length > 0) {
+    const uploads = await saveUploadedFiles(photoFiles, "maintenance");
+    for (const file of uploads) {
+      await insertDocumentRecord({
+        entityType: "maintenance_request",
+        entityId: request.id,
+        name: file.name,
+        url: file.url,
+        mimeType: file.mimeType,
+        uploadedById: session.user.id,
+      });
+    }
+  }
 
   revalidatePath("/portal/maintenance");
   revalidatePath("/landlord/maintenance");

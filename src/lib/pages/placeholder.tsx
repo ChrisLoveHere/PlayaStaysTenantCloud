@@ -48,6 +48,7 @@ export const landlordNav: NavItem[] = [
   { href: "/landlord/rent", label: "Rent" },
   { href: "/landlord/maintenance", label: "Maintenance" },
   { href: "/landlord/commissions", label: "Commissions" },
+  { href: "/landlord/settings", label: "Settings" },
 ];
 
 export const agentNav: NavItem[] = [

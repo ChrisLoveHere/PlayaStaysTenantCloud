@@ -9,6 +9,7 @@ import {
   getRentPaymentsForTenant,
   getTenantByUserId,
 } from "@/lib/queries/rent-maintenance";
+import { getSpeiDetails } from "@/lib/queries/settings";
 import { formatMXN } from "@/lib/utils/format";
 
 export default async function PaymentsPage() {
@@ -60,9 +61,8 @@ export default async function PaymentsPage() {
   }
 
   const payments = await getRentPaymentsForTenant(tenant.id);
-  const speiClabe = process.env.SPEI_CLABE;
-  const speiBeneficiary = process.env.SPEI_BENEFICIARY;
-  const speiBank = process.env.SPEI_BANK;
+  const { clabe: speiClabe, beneficiary: speiBeneficiary, bank: speiBank } =
+    await getSpeiDetails();
 
   return (
     <DashboardShell

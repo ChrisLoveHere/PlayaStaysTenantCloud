@@ -103,3 +103,103 @@ export function leaseRenewalEmail(input: {
     html: layout(title, intro),
   };
 }
+
+export function applicationStageEmail(input: {
+  prospectName: string;
+  propertyCode: string;
+  stageLabel: string;
+}) {
+  return {
+    subject: `Application update — ${input.propertyCode}`,
+    html: layout(
+      "Application status updated",
+      `<p>Hi ${input.prospectName},</p>
+       <p>Your application for <strong>${input.propertyCode}</strong> is now:
+       <strong>${input.stageLabel}</strong>.</p>
+       <p><a href="${appUrl}/portal/application">View your application</a></p>`
+    ),
+  };
+}
+
+export function newApplicationLandlordEmail(input: {
+  prospectName: string;
+  prospectEmail: string;
+  propertyCode: string;
+  applicationId: string;
+}) {
+  return {
+    subject: `New application — ${input.prospectName} (${input.propertyCode})`,
+    html: layout(
+      "New rental application",
+      `<p><strong>${input.prospectName}</strong> (${input.prospectEmail}) applied for
+       <strong>${input.propertyCode}</strong>.</p>
+       <p><a href="${appUrl}/landlord/prospects/${input.applicationId}">Review application</a></p>`
+    ),
+  };
+}
+
+export function rentReceiptEmail(input: {
+  tenantName: string;
+  propertyCode: string;
+  amount: number;
+  paidDate: Date;
+  reference: string | null;
+  paymentMethod: string | null;
+  receiptUrl: string;
+}) {
+  const paid = input.paidDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return {
+    subject: `Rent receipt — ${input.propertyCode}`,
+    html: layout(
+      "Payment received",
+      `<p>Hi ${input.tenantName},</p>
+       <p>We received your rent payment of <strong>${formatMXN(input.amount)}</strong>
+       for <strong>${input.propertyCode}</strong> on ${paid}.</p>
+       ${input.reference ? `<p>Reference: <strong>${input.reference}</strong></p>` : ""}
+       ${input.paymentMethod ? `<p>Method: ${input.paymentMethod}</p>` : ""}
+       <p><a href="${input.receiptUrl}">View receipt</a></p>`
+    ),
+  };
+}
+
+export function buildReceiptHtml(input: {
+  tenantName: string;
+  propertyCode: string;
+  amount: number;
+  dueDate: Date;
+  paidDate: Date;
+  reference: string | null;
+  paymentMethod: string | null;
+  paymentId: string;
+}) {
+  const paid = input.paidDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const due = input.dueDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return layout(
+    "Rent payment receipt",
+    `<p><strong>Receipt #</strong> ${input.paymentId.slice(0, 8).toUpperCase()}</p>
+     <p><strong>Tenant:</strong> ${input.tenantName}<br/>
+     <strong>Property:</strong> ${input.propertyCode}</p>
+     <table style="width:100%;margin:16px 0;border-collapse:collapse;">
+       <tr><td style="padding:8px 0;color:#666;">Amount</td><td style="text-align:right;font-weight:600;">${formatMXN(input.amount)}</td></tr>
+       <tr><td style="padding:8px 0;color:#666;">Due date</td><td style="text-align:right;">${due}</td></tr>
+       <tr><td style="padding:8px 0;color:#666;">Paid date</td><td style="text-align:right;">${paid}</td></tr>
+       ${input.paymentMethod ? `<tr><td style="padding:8px 0;color:#666;">Method</td><td style="text-align:right;">${input.paymentMethod}</td></tr>` : ""}
+       ${input.reference ? `<tr><td style="padding:8px 0;color:#666;">Reference</td><td style="text-align:right;font-family:monospace;">${input.reference}</td></tr>` : ""}
+     </table>
+     <p style="font-size:12px;color:#666;">PlayaStays · Quintana Roo, Mexico · MXN</p>`
+  );
+}

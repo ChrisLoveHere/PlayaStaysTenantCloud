@@ -4,6 +4,7 @@ import {
   agentProfiles,
   applications,
   leases,
+  maintenanceRequests,
   prospects,
   tenants,
 } from "@/lib/db/schema";
@@ -90,6 +91,21 @@ export async function assertDocumentAccess(
           .limit(1);
         if (agent) return;
       }
+
+      throw new Error("Forbidden");
+    }
+
+    case "maintenance_request": {
+      const [req] = await db
+        .select({ tenantUserId: tenants.userId })
+        .from(maintenanceRequests)
+        .innerJoin(tenants, eq(maintenanceRequests.tenantId, tenants.id))
+        .where(eq(maintenanceRequests.id, entityId))
+        .limit(1);
+
+      if (!req) throw new Error("Not found");
+
+      if (role === "tenant" && req.tenantUserId === userId) return;
 
       throw new Error("Forbidden");
     }

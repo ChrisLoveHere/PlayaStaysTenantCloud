@@ -4,11 +4,17 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import {
+  notifyLandlordNewApplication,
+  notifyProspectStageChange,
+} from "@/lib/email/notifications";
 import { db } from "@/lib/db";
 import {
   applications,
   applicationStageHistory,
   prospects,
+  properties,
+  users,
 } from "@/lib/db/schema";
 import type { ApplicationStage } from "@/lib/db/schema";
 import {
@@ -152,6 +158,32 @@ export async function applyToProperty(
 
   if (app) {
     await recordStageChange(app.id, "new", "applied", session.user.id);
+
+    const [meta] = await db
+      .select({
+        propertyCode: properties.propertyCode,
+        prospectName: users.name,
+        prospectEmail: users.email,
+      })
+      .from(applications)
+      .innerJoin(properties, eq(applications.propertyId, properties.id))
+      .innerJoin(prospects, eq(applications.prospectId, prospects.id))
+      .innerJoin(users, eq(prospects.userId, users.id))
+      .where(eq(applications.id, app.id))
+      .limit(1);
+
+    if (meta?.prospectEmail) {
+      try {
+        await notifyLandlordNewApplication({
+          prospectName: meta.prospectName ?? "Prospect",
+          prospectEmail: meta.prospectEmail,
+          propertyCode: meta.propertyCode,
+          applicationId: app.id,
+        });
+      } catch (err) {
+        console.error("[application email]", err);
+      }
+    }
   }
 
   revalidatePath("/portal/application");
@@ -206,6 +238,32 @@ export async function updateApplicationReview(
       session.user.id,
       data.landlordNotes?.trim()
     );
+
+    const [meta] = await db
+      .select({
+        propertyCode: properties.propertyCode,
+        prospectName: users.name,
+        prospectEmail: users.email,
+      })
+      .from(applications)
+      .innerJoin(properties, eq(applications.propertyId, properties.id))
+      .innerJoin(prospects, eq(applications.prospectId, prospects.id))
+      .innerJoin(users, eq(prospects.userId, users.id))
+      .where(eq(applications.id, applicationId))
+      .limit(1);
+
+    if (meta?.prospectEmail) {
+      try {
+        await notifyProspectStageChange({
+          prospectEmail: meta.prospectEmail,
+          prospectName: meta.prospectName ?? "Prospect",
+          propertyCode: meta.propertyCode,
+          stage: newStage,
+        });
+      } catch (err) {
+        console.error("[application stage email]", err);
+      }
+    }
   }
 
   revalidatePath("/landlord/prospects");

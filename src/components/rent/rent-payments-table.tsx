@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Fragment, useActionState, useState } from "react";
 import { updateRentPayment } from "@/lib/actions/rent";
 import type { RentActionState } from "@/lib/actions/rent";
@@ -158,6 +159,7 @@ export function RentPaymentsTable({
               <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Reference</TableHead>
+              <TableHead>Receipt</TableHead>
               {editable && <TableHead />}
             </TableRow>
           </TableHeader>
@@ -197,6 +199,18 @@ export function RentPaymentsTable({
                   <TableCell className="font-mono text-xs">
                     {p.reference ?? "—"}
                   </TableCell>
+                  <TableCell>
+                    {p.status === "paid" && p.paidDate ? (
+                      <Link
+                        href={`/portal/payments/receipt/${p.id}`}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        View
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   {editable && (
                     <TableCell className="text-right">
                       <Button
@@ -213,7 +227,7 @@ export function RentPaymentsTable({
                 </TableRow>
                 {editable && expandedId === p.id && (
                   <TableRow>
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={8}>
                       <UpdatePaymentForm payment={p} />
                     </TableCell>
                   </TableRow>

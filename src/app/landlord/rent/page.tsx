@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { BulkRentForm } from "@/components/rent/bulk-rent-form";
 import { CreateRentPaymentForm } from "@/components/rent/create-rent-payment-form";
 import { RentPaymentsTable } from "@/components/rent/rent-payments-table";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -23,6 +24,7 @@ export default async function RentPage() {
       userName={session?.user?.name}
     >
       <div className="space-y-8">
+        <BulkRentForm />
         <CreateRentPaymentForm tenants={tenants} />
         <div>
           <h2 className="mb-4 text-lg font-semibold">All payments</h2>

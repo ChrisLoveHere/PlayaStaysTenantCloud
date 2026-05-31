@@ -376,3 +376,16 @@ export const notificationLog = pgTable("notification_log", {
   entityId: text("entity_id").notNull(),
   sentAt: timestamp("sent_at").notNull().defaultNow(),
 });
+
+export const landlordSettings = pgTable("landlord_settings", {
+  id: text("id").primaryKey().default("default"),
+  speiClabe: text("spei_clabe"),
+  speiBeneficiary: text("spei_beneficiary"),
+  speiBank: text("spei_bank"),
+  notifyEmail: text("notify_email"),
+  sendApplicationEmails: boolean("send_application_emails")
+    .notNull()
+    .default(true),
+  sendReceiptEmails: boolean("send_receipt_emails").notNull().default(true),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

@@ -33,7 +33,7 @@ export function SubmitMaintenanceForm() {
       <CardHeader>
         <CardTitle className="text-base">New request</CardTitle>
       </CardHeader>
-      <form action={formAction}>
+      <form action={formAction} encType="multipart/form-data">
         <CardContent className="space-y-4">
           {state.error && (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -79,6 +79,19 @@ export function SubmitMaintenanceForm() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="photos">Photos (optional)</Label>
+            <Input
+              id="photos"
+              name="photos"
+              type="file"
+              accept="image/*"
+              multiple
+            />
+            <p className="text-xs text-muted-foreground">
+              Up to 5 images — JPG, PNG, or WebP.
+            </p>
           </div>
         </CardContent>
         <CardFooter>

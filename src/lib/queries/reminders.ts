@@ -13,18 +13,10 @@ import {
   users,
 } from "@/lib/db/schema";
 import type { NotificationType } from "@/lib/db/schema";
+import { getLandlordNotifyEmail } from "@/lib/queries/settings";
 
 export async function getLandlordEmail(): Promise<string | null> {
-  const override = process.env.LANDLORD_NOTIFY_EMAIL?.trim();
-  if (override) return override;
-
-  const [landlord] = await db
-    .select({ email: users.email })
-    .from(users)
-    .where(eq(users.role, "landlord"))
-    .limit(1);
-
-  return landlord?.email ?? null;
+  return getLandlordNotifyEmail();
 }
 
 export async function wasNotificationSent(

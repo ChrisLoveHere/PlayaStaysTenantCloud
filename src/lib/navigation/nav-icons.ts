@@ -9,6 +9,7 @@ import {
   Palmtree,
   Users,
   Wrench,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "/landlord/rent": Banknote,
   "/landlord/maintenance": Wrench,
   "/landlord/commissions": Banknote,
+  "/landlord/settings": Settings,
   "/agent": LayoutDashboard,
   "/agent/showings": CalendarDays,
   "/agent/prospects": ClipboardList,

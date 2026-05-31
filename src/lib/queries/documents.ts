@@ -1,11 +1,13 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import {
   applications,
   documents,
   leases,
+  properties,
   prospects,
+  rentPayments,
   tenants,
   users,
 } from "@/lib/db/schema";
@@ -48,6 +50,44 @@ export async function getDocumentsForEntity(
       )
     )
     .orderBy(desc(documents.createdAt));
+}
+
+export async function getDocumentsGroupedByEntity(
+  entityType: DocumentEntityType,
+  entityIds: string[]
+): Promise<Map<string, DocumentRow[]>> {
+  const map = new Map<string, DocumentRow[]>();
+  if (entityIds.length === 0) return map;
+
+  const uploader = alias(users, "uploader");
+  const rows = await db
+    .select({
+      id: documents.id,
+      entityType: documents.entityType,
+      entityId: documents.entityId,
+      name: documents.name,
+      url: documents.url,
+      mimeType: documents.mimeType,
+      createdAt: documents.createdAt,
+      uploadedByName: uploader.name,
+    })
+    .from(documents)
+    .leftJoin(uploader, eq(documents.uploadedById, uploader.id))
+    .where(
+      and(
+        eq(documents.entityType, entityType),
+        inArray(documents.entityId, entityIds)
+      )
+    )
+    .orderBy(desc(documents.createdAt));
+
+  for (const row of rows) {
+    const list = map.get(row.entityId) ?? [];
+    list.push(row);
+    map.set(row.entityId, list);
+  }
+
+  return map;
 }
 
 export async function getDocumentById(documentId: string) {
@@ -93,4 +133,30 @@ export async function getProspectIdForUser(userId: string) {
     .where(eq(prospects.userId, userId))
     .limit(1);
   return prospect?.id ?? null;
+}
+
+export async function getRentPaymentForReceipt(paymentId: string) {
+  const tenantUser = alias(users, "tenant_user");
+
+  const [row] = await db
+    .select({
+      id: rentPayments.id,
+      amount: rentPayments.amount,
+      dueDate: rentPayments.dueDate,
+      paidDate: rentPayments.paidDate,
+      status: rentPayments.status,
+      reference: rentPayments.reference,
+      paymentMethod: rentPayments.paymentMethod,
+      propertyCode: properties.propertyCode,
+      tenantUserId: tenants.userId,
+      tenantName: tenantUser.name,
+    })
+    .from(rentPayments)
+    .innerJoin(tenants, eq(rentPayments.tenantId, tenants.id))
+    .innerJoin(tenantUser, eq(tenants.userId, tenantUser.id))
+    .innerJoin(properties, eq(rentPayments.propertyId, properties.id))
+    .where(eq(rentPayments.id, paymentId))
+    .limit(1);
+
+  return row ?? null;
 }

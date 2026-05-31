@@ -91,6 +91,7 @@ export const DOCUMENT_ENTITY_TYPES = [
   "property",
   "lease",
   "application",
+  "maintenance_request",
 ] as const;
 export type DocumentEntityType = (typeof DOCUMENT_ENTITY_TYPES)[number];
 

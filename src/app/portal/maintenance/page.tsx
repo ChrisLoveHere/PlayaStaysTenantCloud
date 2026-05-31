@@ -6,6 +6,7 @@ import { SubmitMaintenanceForm } from "@/components/maintenance/submit-maintenan
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { tenantNav } from "@/lib/pages/placeholder";
+import { getDocumentsGroupedByEntity } from "@/lib/queries/documents";
 import {
   getMaintenanceForTenant,
   getTenantByUserId,
@@ -60,6 +61,19 @@ export default async function PortalMaintenancePage() {
   }
 
   const requests = await getMaintenanceForTenant(tenant.id);
+  const photosByRequest = await getDocumentsGroupedByEntity(
+    "maintenance_request",
+    requests.map((r) => r.id)
+  );
+
+  const items = requests.map((r) => ({
+    ...r,
+    photos: (photosByRequest.get(r.id) ?? []).map((d) => ({
+      id: d.id,
+      url: d.url,
+      name: d.name,
+    })),
+  }));
 
   return (
     <DashboardShell
@@ -72,7 +86,7 @@ export default async function PortalMaintenancePage() {
         <SubmitMaintenanceForm />
         <div>
           <h2 className="mb-4 text-lg font-semibold">Your requests</h2>
-          <MaintenanceTable items={requests} />
+          <MaintenanceTable items={items} />
         </div>
       </div>
     </DashboardShell>
