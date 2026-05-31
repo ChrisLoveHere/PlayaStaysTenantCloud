@@ -17,6 +17,7 @@ import type {
   NotificationType,
   PropertyStatus,
   PlayaLocation,
+  RentClaimStatus,
   RentPaymentStatus,
   ShowingStatus,
   TenantStatus,
@@ -350,6 +351,31 @@ export const rentPayments = pgTable("rent_payments", {
   paymentMethod: text("payment_method"),
   reference: text("reference"),
   notes: text("notes"),
+  ...timestamps,
+});
+
+export const rentPaymentClaims = pgTable("rent_payment_claims", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  rentPaymentId: text("rent_payment_id")
+    .notNull()
+    .references(() => rentPayments.id, { onDelete: "cascade" }),
+  tenantId: text("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  reference: text("reference").notNull(),
+  amount: integer("amount").notNull(),
+  paidDate: timestamp("paid_date").notNull(),
+  status: text("status")
+    .$type<RentClaimStatus>()
+    .notNull()
+    .default("pending_review"),
+  tenantNotes: text("tenant_notes"),
+  landlordNotes: text("landlord_notes"),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedById: text("reviewed_by_id").references(() => users.id),
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
   ...timestamps,
 });
 

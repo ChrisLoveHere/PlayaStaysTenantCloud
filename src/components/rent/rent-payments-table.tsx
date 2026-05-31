@@ -19,6 +19,7 @@ import {
 import { RENT_PAYMENT_STATUSES } from "@/lib/db/schema/enums";
 import {
   formatMXN,
+  rentClaimStatusLabel,
   rentPaymentStatusLabel,
 } from "@/lib/utils/format";
 import { getLocationLabel } from "@/lib/constants/locations";
@@ -35,6 +36,7 @@ type RentRow = {
   tenantName: string | null;
   propertyCode: string;
   location: string;
+  claimStatus?: string | null;
 };
 
 function UpdatePaymentForm({
@@ -195,6 +197,11 @@ export function RentPaymentsTable({
                     >
                       {rentPaymentStatusLabel(p.status)}
                     </Badge>
+                    {p.claimStatus === "pending_review" && (
+                      <Badge variant="outline" className="ml-1">
+                        {rentClaimStatusLabel(p.claimStatus)}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                     {p.reference ?? "—"}

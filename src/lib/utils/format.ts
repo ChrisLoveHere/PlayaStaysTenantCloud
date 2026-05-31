@@ -91,6 +91,15 @@ export function rentPaymentStatusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
+export function rentClaimStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending_review: "Pending review",
+    approved: "Approved",
+    rejected: "Declined",
+  };
+  return labels[status] ?? status;
+}
+
 export function maintenanceStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     open: "Open",

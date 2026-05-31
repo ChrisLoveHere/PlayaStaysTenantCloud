@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { RentPaymentsTable } from "@/components/rent/rent-payments-table";
+import { ReportPaymentSection } from "@/components/rent/report-payment-section";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tenantNav } from "@/lib/pages/placeholder";
@@ -10,6 +11,7 @@ import {
   getTenantByUserId,
 } from "@/lib/queries/rent-maintenance";
 import { getSpeiDetails } from "@/lib/queries/settings";
+import { getClaimsForTenant } from "@/lib/queries/rent-claims";
 import { formatMXN } from "@/lib/utils/format";
 
 export default async function PaymentsPage() {
@@ -61,6 +63,18 @@ export default async function PaymentsPage() {
   }
 
   const payments = await getRentPaymentsForTenant(tenant.id);
+  const claims = await getClaimsForTenant(tenant.id);
+  const claimsByPaymentId = new Map(
+    claims.map((c) => [c.rentPaymentId, { rentPaymentId: c.rentPaymentId, status: c.status }])
+  );
+  const pendingClaimByPayment = new Map(
+    claims
+      .filter((c) => c.status === "pending_review")
+      .map((c) => [c.rentPaymentId, c.status])
+  );
+  const unpaidPayments = payments.filter((p) =>
+    ["pending", "overdue", "partial"].includes(p.status)
+  );
   const { clabe: speiClabe, beneficiary: speiBeneficiary, bank: speiBank } =
     await getSpeiDetails();
 
@@ -114,14 +128,22 @@ export default async function PaymentsPage() {
           </CardContent>
         </Card>
 
+        <ReportPaymentSection
+          unpaidPayments={unpaidPayments}
+          claimsByPaymentId={claimsByPaymentId}
+        />
+
         <div>
           <h2 className="mb-4 text-lg font-semibold">Payment history</h2>
-          <RentPaymentsTable items={payments.map((p) => ({
-            ...p,
-            tenantName: null,
-            propertyCode: tenant.propertyCode,
-            location: tenant.location,
-          }))} />
+          <RentPaymentsTable
+            items={payments.map((p) => ({
+              ...p,
+              tenantName: null,
+              propertyCode: tenant.propertyCode,
+              location: tenant.location,
+              claimStatus: pendingClaimByPayment.get(p.id) ?? null,
+            }))}
+          />
         </div>
       </div>
     </DashboardShell>

@@ -74,6 +74,13 @@ export const RENT_PAYMENT_STATUSES = [
 ] as const;
 export type RentPaymentStatus = (typeof RENT_PAYMENT_STATUSES)[number];
 
+export const RENT_CLAIM_STATUSES = [
+  "pending_review",
+  "approved",
+  "rejected",
+] as const;
+export type RentClaimStatus = (typeof RENT_CLAIM_STATUSES)[number];
+
 export const COMMISSION_TYPES = ["percent", "flat"] as const;
 export type CommissionType = (typeof COMMISSION_TYPES)[number];
 

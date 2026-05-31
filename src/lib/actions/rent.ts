@@ -153,6 +153,81 @@ export async function generateMonthlyRentForAll(): Promise<RentActionState> {
   };
 }
 
+export async function markRentPaymentPaid(
+  paymentId: string,
+  input: {
+    reference?: string | null;
+    paidDate?: Date;
+    paymentMethod?: string | null;
+    notes?: string | null;
+  }
+): Promise<RentActionState> {
+  await requireLandlord();
+
+  const [before] = await db
+    .select({ status: rentPayments.status })
+    .from(rentPayments)
+    .where(eq(rentPayments.id, paymentId))
+    .limit(1);
+
+  if (!before) return { error: "Payment not found." };
+  if (before.status === "paid") return { error: "Payment is already marked paid." };
+
+  const paidDate = input.paidDate ?? new Date();
+
+  await db
+    .update(rentPayments)
+    .set({
+      status: "paid",
+      paidDate,
+      paymentMethod: input.paymentMethod?.trim() || "SPEI",
+      reference: input.reference?.trim() || null,
+      notes: input.notes?.trim() || null,
+      updatedAt: new Date(),
+    })
+    .where(eq(rentPayments.id, paymentId));
+
+  const tenantUser = alias(users, "tenant_user");
+  const [row] = await db
+    .select({
+      amount: rentPayments.amount,
+      paidDate: rentPayments.paidDate,
+      reference: rentPayments.reference,
+      paymentMethod: rentPayments.paymentMethod,
+      propertyCode: properties.propertyCode,
+      tenantName: tenantUser.name,
+      tenantEmail: tenantUser.email,
+    })
+    .from(rentPayments)
+    .innerJoin(tenants, eq(rentPayments.tenantId, tenants.id))
+    .innerJoin(tenantUser, eq(tenants.userId, tenantUser.id))
+    .innerJoin(properties, eq(rentPayments.propertyId, properties.id))
+    .where(eq(rentPayments.id, paymentId))
+    .limit(1);
+
+  if (row?.tenantEmail && row.paidDate) {
+    try {
+      await sendRentReceiptEmail({
+        tenantEmail: row.tenantEmail,
+        tenantName: row.tenantName ?? "Tenant",
+        propertyCode: row.propertyCode,
+        amount: row.amount,
+        paidDate: row.paidDate,
+        reference: row.reference,
+        paymentMethod: row.paymentMethod,
+        paymentId,
+      });
+    } catch (err) {
+      console.error("[rent receipt email]", err);
+    }
+  }
+
+  revalidatePath("/landlord/rent");
+  revalidatePath("/landlord");
+  revalidatePath("/portal/payments");
+  return { success: "Payment marked as paid." };
+}
+
 export async function updateRentPayment(
   paymentId: string,
   _prev: RentActionState,

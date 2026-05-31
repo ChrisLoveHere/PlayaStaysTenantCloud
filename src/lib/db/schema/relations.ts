@@ -13,6 +13,7 @@ import {
   properties,
   propertyPhotos,
   prospects,
+  rentPaymentClaims,
   rentPayments,
   sessions,
   showings,
@@ -164,6 +165,7 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   maintenanceRequests: many(maintenanceRequests),
   moveChecklists: many(moveChecklists),
   rentPayments: many(rentPayments),
+  rentPaymentClaims: many(rentPaymentClaims),
   commissions: many(commissions),
 }));
 
@@ -219,7 +221,7 @@ export const maintenanceRequestsRelations = relations(
   })
 );
 
-export const rentPaymentsRelations = relations(rentPayments, ({ one }) => ({
+export const rentPaymentsRelations = relations(rentPayments, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [rentPayments.tenantId],
     references: [tenants.id],
@@ -228,7 +230,26 @@ export const rentPaymentsRelations = relations(rentPayments, ({ one }) => ({
     fields: [rentPayments.propertyId],
     references: [properties.id],
   }),
+  claims: many(rentPaymentClaims),
 }));
+
+export const rentPaymentClaimsRelations = relations(
+  rentPaymentClaims,
+  ({ one }) => ({
+    rentPayment: one(rentPayments, {
+      fields: [rentPaymentClaims.rentPaymentId],
+      references: [rentPayments.id],
+    }),
+    tenant: one(tenants, {
+      fields: [rentPaymentClaims.tenantId],
+      references: [tenants.id],
+    }),
+    reviewedBy: one(users, {
+      fields: [rentPaymentClaims.reviewedById],
+      references: [users.id],
+    }),
+  })
+);
 
 export const documentsRelations = relations(documents, ({ one }) => ({
   uploadedBy: one(users, {

@@ -18,6 +18,7 @@ import {
 } from "@/components/dashboard/portfolio-charts";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { UpcomingRenewalsCard } from "@/components/dashboard/upcoming-renewals-card";
+import { PendingPaymentClaimsCard } from "@/components/rent/pending-payment-claims-card";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,6 +125,8 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
           icon={Wrench}
         />
       </div>
+
+      <PendingPaymentClaimsCard />
 
       {city === "all" ? (
         <>
