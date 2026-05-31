@@ -26,7 +26,7 @@ export function DashboardShell({
         <div className="flex items-center gap-2 border-b px-6 py-5">
           <Building2 className="h-6 w-6 text-primary" />
           <div>
-            <p className="font-semibold leading-none">Landlord Hub</p>
+            <p className="font-semibold leading-none">PlayaStays</p>
             <p className="text-xs text-muted-foreground">{title}</p>
           </div>
         </div>

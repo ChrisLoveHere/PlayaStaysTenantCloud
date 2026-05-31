@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Landlord Hub",
-  description: "Property management for landlords, agents, and tenants in Mexico",
+  title: "PlayaStays",
+  description: "Long-term rental management across Quintana Roo, Mexico",
 };
 
 export default function RootLayout({

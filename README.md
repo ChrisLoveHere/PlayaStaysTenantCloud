@@ -1,6 +1,6 @@
-# Landlord Hub
+# PlayaStays
 
-Unified property management for landlords, leasing agents, and tenants — built for Mexico (MXN, flexible addresses, SPEI-friendly rent tracking).
+Long-term rental management across Quintana Roo — Playa del Carmen, Tulum, Cozumel, and more.
 
 ## Tech stack
 
@@ -17,13 +17,13 @@ Unified property management for landlords, leasing agents, and tenants — built
 # 1. Install dependencies
 npm install
 
-# 2. Copy environment file
+# 2. Copy environment file and add your Neon credentials
 cp .env.example .env.local
 
 # 3. Generate AUTH_SECRET and add to .env.local
 openssl rand -base64 32
 
-# 4. Push database schema
+# 4. Push database schema to Neon
 npm run db:push
 
 # 5. Seed demo data
@@ -106,11 +106,26 @@ See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for full ERD, relationships, 
 | `npm run db:seed` | Seed demo accounts    |
 | `npm run db:studio` | Drizzle Studio GUI  |
 
-## Deployment (Vercel)
+## Deployment (Vercel + Neon)
 
-1. Set `AUTH_SECRET` and `AUTH_URL` in Vercel env vars
-2. For production DB, use Vercel Postgres or Neon and update `DATABASE_URL`
-3. Note: current schema uses SQLite — migrate to `pgTable` definitions before production Postgres deploy
+Add these environment variables in [Vercel project settings](https://vercel.com/chris-projects-63dd8012/playa-stays-tenant-cloud/settings/environment-variables):
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Neon **pooled** connection string |
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `AUTH_URL` | `https://playa-stays-tenant-cloud.vercel.app` |
+
+After first deploy, run locally against production Neon:
+
+```bash
+npm run db:push   # if schema changed
+npm run db:seed   # optional demo data
+```
+
+### Agent approval
+
+Agents self-register at `/register/agent` with `isActive: false`. Landlord approves at `/landlord/agents`. Unapproved agents see `/pending-approval` only.
 
 ## License
 

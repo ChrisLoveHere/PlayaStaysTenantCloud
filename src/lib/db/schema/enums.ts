@@ -78,3 +78,14 @@ export type CommissionType = (typeof COMMISSION_TYPES)[number];
 
 export const COMMISSION_STATUSES = ["pending", "paid"] as const;
 export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];
+
+export const PLAYA_LOCATIONS = [
+  "playa_del_carmen",
+  "puerto_morelos",
+  "tulum",
+  "cozumel",
+  "isla_mujeres",
+  "xpu_ha",
+  "other",
+] as const;
+export type PlayaLocation = (typeof PLAYA_LOCATIONS)[number];

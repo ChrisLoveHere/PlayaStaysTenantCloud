@@ -3,6 +3,8 @@
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { agentProfiles, prospects, users } from "@/lib/db/schema";
 import type { UserRole } from "@/lib/db/schema";
@@ -21,6 +23,7 @@ export async function registerUser(
   const password = formData.get("password") as string;
   const role = (formData.get("role") as UserRole) ?? "prospect";
   const phone = (formData.get("phone") as string)?.trim();
+  const bio = (formData.get("bio") as string)?.trim();
 
   if (!name || !email || !password) {
     return { error: "All fields are required." };
@@ -48,10 +51,18 @@ export async function registerUser(
 
   if (role === "prospect" && user) {
     await db.insert(prospects).values({ userId: user.id });
+    redirect("/login?registered=1");
   }
 
   if (role === "agent" && user) {
-    await db.insert(agentProfiles).values({ userId: user.id });
+    await db.insert(agentProfiles).values({
+      userId: user.id,
+      bio: bio || null,
+      isActive: false,
+    });
+    return {
+      success: true,
+    };
   }
 
   redirect("/login?registered=1");

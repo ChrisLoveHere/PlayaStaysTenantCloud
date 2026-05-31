@@ -1,9 +1,11 @@
 import {
+  boolean,
   integer,
+  pgTable,
   primaryKey,
-  sqliteTable,
   text,
-} from "drizzle-orm/sqlite-core";
+  timestamp,
+} from "drizzle-orm/pg-core";
 import type {
   ApplicationStage,
   CommissionStatus,
@@ -12,6 +14,7 @@ import type {
   MaintenancePriority,
   MaintenanceStatus,
   PropertyStatus,
+  PlayaLocation,
   RentPaymentStatus,
   ShowingStatus,
   TenantStatus,
@@ -19,23 +22,19 @@ import type {
 } from "./enums";
 
 const timestamps = {
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 };
 
 // ─── Auth.js tables ───────────────────────────────────────────────────────────
 
-export const users = sqliteTable("users", {
+export const users = pgTable("users", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name"),
   email: text("email").notNull().unique(),
-  emailVerified: integer("email_verified", { mode: "timestamp" }),
+  emailVerified: timestamp("email_verified"),
   image: text("image"),
   passwordHash: text("password_hash"),
   role: text("role").$type<UserRole>().notNull().default("prospect"),
@@ -43,7 +42,7 @@ export const users = sqliteTable("users", {
   ...timestamps,
 });
 
-export const accounts = sqliteTable(
+export const accounts = pgTable(
   "accounts",
   {
     userId: text("user_id")
@@ -63,27 +62,27 @@ export const accounts = sqliteTable(
   (table) => [primaryKey({ columns: [table.provider, table.providerAccountId] })]
 );
 
-export const sessions = sqliteTable("sessions", {
+export const sessions = pgTable("sessions", {
   sessionToken: text("session_token").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  expires: integer("expires", { mode: "timestamp" }).notNull(),
+  expires: timestamp("expires").notNull(),
 });
 
-export const verificationTokens = sqliteTable(
+export const verificationTokens = pgTable(
   "verification_tokens",
   {
     identifier: text("identifier").notNull(),
     token: text("token").notNull(),
-    expires: integer("expires", { mode: "timestamp" }).notNull(),
+    expires: timestamp("expires").notNull(),
   },
   (table) => [primaryKey({ columns: [table.identifier, table.token] })]
 );
 
 // ─── Leasing agents ───────────────────────────────────────────────────────────
 
-export const agentProfiles = sqliteTable("agent_profiles", {
+export const agentProfiles = pgTable("agent_profiles", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -95,19 +94,22 @@ export const agentProfiles = sqliteTable("agent_profiles", {
     .$type<CommissionType>()
     .notNull()
     .default("percent"),
-  commissionRate: integer("commission_rate").notNull().default(10), // percent or cents MXN
+  commissionRate: integer("commission_rate").notNull().default(10),
   bio: text("bio"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  /** false until landlord approves self-registered agents */
+  isActive: boolean("is_active").notNull().default(false),
   ...timestamps,
 });
 
 // ─── Properties ─────────────────────────────────────────────────────────────
 
-export const properties = sqliteTable("properties", {
+export const properties = pgTable("properties", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   propertyCode: text("property_code").notNull().unique(),
+  /** PlayaStays portfolio location for filtering & reporting */
+  location: text("location").$type<PlayaLocation>().notNull().default("playa_del_carmen"),
   calle: text("calle").notNull(),
   colonia: text("colonia").notNull(),
   ciudad: text("ciudad").notNull(),
@@ -118,15 +120,15 @@ export const properties = sqliteTable("properties", {
     .$type<PropertyStatus>()
     .notNull()
     .default("available"),
-  monthlyRent: integer("monthly_rent").notNull(), // MXN cents
-  securityDeposit: integer("security_deposit").notNull(), // MXN cents
+  monthlyRent: integer("monthly_rent").notNull(),
+  securityDeposit: integer("security_deposit").notNull(),
   description: text("description"),
-  keycodes: text("keycodes"), // JSON string
-  amenities: text("amenities"), // JSON string array
+  keycodes: text("keycodes"),
+  amenities: text("amenities"),
   ...timestamps,
 });
 
-export const propertyPhotos = sqliteTable("property_photos", {
+export const propertyPhotos = pgTable("property_photos", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -136,14 +138,12 @@ export const propertyPhotos = sqliteTable("property_photos", {
   url: text("url").notNull(),
   caption: text("caption"),
   sortOrder: integer("sort_order").notNull().default(0),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // ─── Prospects & applications ─────────────────────────────────────────────────
 
-export const prospects = sqliteTable("prospects", {
+export const prospects = pgTable("prospects", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -151,16 +151,15 @@ export const prospects = sqliteTable("prospects", {
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
-  // Application data (filled during screening)
-  income: integer("income"), // MXN cents monthly
-  employment: text("employment"), // JSON
-  previousRentals: text("previous_rentals"), // JSON
-  references: text("references_data"), // JSON
+  income: integer("income"),
+  employment: text("employment"),
+  previousRentals: text("previous_rentals"),
+  references: text("references_data"),
   notes: text("notes"),
   ...timestamps,
 });
 
-export const applications = sqliteTable("applications", {
+export const applications = pgTable("applications", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -175,13 +174,13 @@ export const applications = sqliteTable("applications", {
     .$type<ApplicationStage>()
     .notNull()
     .default("new"),
-  rating: integer("rating"), // 1-5
+  rating: integer("rating"),
   landlordNotes: text("landlord_notes"),
-  submittedAt: integer("submitted_at", { mode: "timestamp" }),
+  submittedAt: timestamp("submitted_at"),
   ...timestamps,
 });
 
-export const applicationStageHistory = sqliteTable("application_stage_history", {
+export const applicationStageHistory = pgTable("application_stage_history", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -192,14 +191,12 @@ export const applicationStageHistory = sqliteTable("application_stage_history", 
   toStage: text("to_stage").$type<ApplicationStage>().notNull(),
   changedById: text("changed_by_id").references(() => users.id),
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // ─── Showings ─────────────────────────────────────────────────────────────────
 
-export const showings = sqliteTable("showings", {
+export const showings = pgTable("showings", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -213,7 +210,7 @@ export const showings = sqliteTable("showings", {
     .notNull()
     .references(() => agentProfiles.id),
   applicationId: text("application_id").references(() => applications.id),
-  scheduledAt: integer("scheduled_at", { mode: "timestamp" }).notNull(),
+  scheduledAt: timestamp("scheduled_at").notNull(),
   durationMinutes: integer("duration_minutes").notNull().default(30),
   status: text("status")
     .$type<ShowingStatus>()
@@ -223,25 +220,23 @@ export const showings = sqliteTable("showings", {
   ...timestamps,
 });
 
-export const agentAvailabilityBlocks = sqliteTable("agent_availability_blocks", {
+export const agentAvailabilityBlocks = pgTable("agent_availability_blocks", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   agentId: text("agent_id")
     .notNull()
     .references(() => agentProfiles.id, { onDelete: "cascade" }),
-  startAt: integer("start_at", { mode: "timestamp" }).notNull(),
-  endAt: integer("end_at", { mode: "timestamp" }).notNull(),
+  startAt: timestamp("start_at").notNull(),
+  endAt: timestamp("end_at").notNull(),
   reason: text("reason"),
-  allDay: integer("all_day", { mode: "boolean" }).notNull().default(false),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+  allDay: boolean("all_day").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // ─── Tenants & leases ─────────────────────────────────────────────────────────
 
-export const tenants = sqliteTable("tenants", {
+export const tenants = pgTable("tenants", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -253,15 +248,15 @@ export const tenants = sqliteTable("tenants", {
     .notNull()
     .references(() => properties.id),
   assignedAgentId: text("assigned_agent_id").references(() => agentProfiles.id),
-  prospectId: text("prospect_id").references(() => prospects.id), // history link
+  prospectId: text("prospect_id").references(() => prospects.id),
   applicationId: text("application_id").references(() => applications.id),
-  moveInDate: integer("move_in_date", { mode: "timestamp" }),
-  moveOutDate: integer("move_out_date", { mode: "timestamp" }),
+  moveInDate: timestamp("move_in_date"),
+  moveOutDate: timestamp("move_out_date"),
   status: text("status").$type<TenantStatus>().notNull().default("active"),
   ...timestamps,
 });
 
-export const leases = sqliteTable("leases", {
+export const leases = pgTable("leases", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -271,20 +266,18 @@ export const leases = sqliteTable("leases", {
   propertyId: text("property_id")
     .notNull()
     .references(() => properties.id),
-  startDate: integer("start_date", { mode: "timestamp" }).notNull(),
-  endDate: integer("end_date", { mode: "timestamp" }).notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
   monthlyRent: integer("monthly_rent").notNull(),
   securityDeposit: integer("security_deposit").notNull(),
   documentUrl: text("document_url"),
-  signedAt: integer("signed_at", { mode: "timestamp" }),
+  signedAt: timestamp("signed_at"),
   status: text("status").$type<LeaseStatus>().notNull().default("draft"),
-  renewalAlertSent: integer("renewal_alert_sent", { mode: "boolean" })
-    .notNull()
-    .default(false),
+  renewalAlertSent: boolean("renewal_alert_sent").notNull().default(false),
   ...timestamps,
 });
 
-export const commissions = sqliteTable("commissions", {
+export const commissions = pgTable("commissions", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -297,23 +290,21 @@ export const commissions = sqliteTable("commissions", {
   tenantId: text("tenant_id")
     .notNull()
     .references(() => tenants.id),
-  amount: integer("amount").notNull(), // MXN cents
-  rate: integer("rate"), // percent or flat amount used
+  amount: integer("amount").notNull(),
+  rate: integer("rate"),
   type: text("type").$type<CommissionType>().notNull(),
   status: text("status")
     .$type<CommissionStatus>()
     .notNull()
     .default("pending"),
-  paidAt: integer("paid_at", { mode: "timestamp" }),
+  paidAt: timestamp("paid_at"),
   notes: text("notes"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // ─── Maintenance & rent ───────────────────────────────────────────────────────
 
-export const maintenanceRequests = sqliteTable("maintenance_requests", {
+export const maintenanceRequests = pgTable("maintenance_requests", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -333,13 +324,11 @@ export const maintenanceRequests = sqliteTable("maintenance_requests", {
     .$type<MaintenanceStatus>()
     .notNull()
     .default("open"),
-  submittedAt: integer("submitted_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  resolvedAt: integer("resolved_at", { mode: "timestamp" }),
+  submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
 });
 
-export const rentPayments = sqliteTable("rent_payments", {
+export const rentPayments = pgTable("rent_payments", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
@@ -349,32 +338,30 @@ export const rentPayments = sqliteTable("rent_payments", {
   propertyId: text("property_id")
     .notNull()
     .references(() => properties.id),
-  amount: integer("amount").notNull(), // MXN cents
-  dueDate: integer("due_date", { mode: "timestamp" }).notNull(),
-  paidDate: integer("paid_date", { mode: "timestamp" }),
+  amount: integer("amount").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  paidDate: timestamp("paid_date"),
   status: text("status")
     .$type<RentPaymentStatus>()
     .notNull()
     .default("pending"),
-  paymentMethod: text("payment_method"), // e.g. SPEI
-  reference: text("reference"), // SPEI reference / CLABE note
+  paymentMethod: text("payment_method"),
+  reference: text("reference"),
   notes: text("notes"),
   ...timestamps,
 });
 
 // ─── Documents (polymorphic) ──────────────────────────────────────────────────
 
-export const documents = sqliteTable("documents", {
+export const documents = pgTable("documents", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  entityType: text("entity_type").notNull(), // property | application | tenant | lease | maintenance
+  entityType: text("entity_type").notNull(),
   entityId: text("entity_id").notNull(),
   name: text("name").notNull(),
   url: text("url").notNull(),
   mimeType: text("mime_type"),
   uploadedById: text("uploaded_by_id").references(() => users.id),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

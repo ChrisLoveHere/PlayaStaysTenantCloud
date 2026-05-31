@@ -1,22 +1,27 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { config } from "dotenv";
+
+config({ path: ".env.local" });
+config({ path: ".env" });
+
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 
-const filePath = (process.env.DATABASE_URL ?? "file:./local.db").replace(
-  "file:",
-  ""
-);
+const connectionString = process.env.DATABASE_URL;
 
-const sqlite = new Database(filePath);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set");
+}
+
+/** Pooled connection for serverless (Neon pooler) */
+const client = postgres(connectionString, { prepare: false });
 
 declare global {
   // eslint-disable-next-line no-var
   var __db: ReturnType<typeof drizzle<typeof schema>> | undefined;
 }
 
-export const db = globalThis.__db ?? drizzle(sqlite, { schema });
+export const db = globalThis.__db ?? drizzle(client, { schema });
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.__db = db;

@@ -6,14 +6,20 @@ import { NextResponse } from "next/server";
 const publicRoutes = ["/", "/login", "/register"];
 const authRoutes = ["/login", "/register"];
 
+function isPublicPath(pathname: string) {
+  return (
+    publicRoutes.some((route) => pathname === route) ||
+    pathname.startsWith("/register/") ||
+    pathname.startsWith("/api/auth")
+  );
+}
+
 export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const pathname = nextUrl.pathname;
 
-  const isPublic = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith("/api/auth")
-  );
+  const isPublic = isPublicPath(pathname);
   const isAuthRoute = authRoutes.includes(pathname);
 
   if (isAuthRoute && isLoggedIn) {

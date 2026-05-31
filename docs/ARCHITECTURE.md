@@ -1,4 +1,20 @@
-# Landlord Hub — Architecture
+# PlayaStays — Architecture
+
+## Location / City model
+
+Every property has a **`location`** field (portfolio city slug) used for filtering, reporting, and dashboards:
+
+| Slug | Display name |
+|------|----------------|
+| `playa_del_carmen` | Playa del Carmen |
+| `puerto_morelos` | Puerto Morelos |
+| `tulum` | Tulum |
+| `cozumel` | Cozumel |
+| `isla_mujeres` | Isla Mujeres |
+| `xpu_ha` | Xpu-Ha |
+| `other` | Other |
+
+The landlord dashboard reads `?city=` query param (`all` or a slug). Portfolio queries in `src/lib/queries/portfolio.ts` filter all metrics by location when set.
 
 ## System overview
 

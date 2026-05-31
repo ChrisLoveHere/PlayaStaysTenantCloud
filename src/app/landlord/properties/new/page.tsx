@@ -1,21 +1,19 @@
 import { auth } from "@/auth";
-import { AgentsTable } from "@/components/landlord/agents-table";
+import { PropertyForm } from "@/components/properties/property-form";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { landlordNav } from "@/lib/pages/placeholder";
-import { getAgentsForLandlord } from "@/lib/actions/agents";
 
-export default async function AgentsPage() {
+export default async function NewPropertyPage() {
   const session = await auth();
-  const agents = await getAgentsForLandlord();
 
   return (
     <DashboardShell
-      title="Landlord"
-      subtitle="Leasing Agents"
+      title="PlayaStays"
+      subtitle="Add Property"
       navItems={landlordNav}
       userName={session?.user?.name}
     >
-      <AgentsTable agents={agents} />
+      <PropertyForm />
     </DashboardShell>
   );
 }

@@ -29,7 +29,7 @@ export function formatPropertyAddress(p: {
 export function applicationStageLabel(stage: string): string {
   const labels: Record<string, string> = {
     new: "New",
-    property_viewed: "Property Viewed",
+    property_viewed: "Viewed Properties",
     applied: "Applied",
     screening: "Screening",
     approved: "Approved",
