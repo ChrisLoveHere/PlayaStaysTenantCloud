@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { DashboardNav, type NavItem } from "@/components/layout/dashboard-nav";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 type DashboardShellProps = {
   title: string;
@@ -137,19 +138,23 @@ export function DashboardShell({
               </p>
             )}
           </div>
+          <NotificationBell />
         </header>
 
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto w-full max-w-7xl">
-            <div className="mb-6 hidden md:block">
-              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                {pageTitle}
-              </h1>
-              {description && (
-                <p className="mt-1 max-w-2xl text-muted-foreground">
-                  {description}
-                </p>
-              )}
+            <div className="mb-6 hidden md:flex md:items-start md:justify-between md:gap-4">
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                  {pageTitle}
+                </h1>
+                {description && (
+                  <p className="mt-1 max-w-2xl text-muted-foreground">
+                    {description}
+                  </p>
+                )}
+              </div>
+              <NotificationBell />
             </div>
             {children}
           </div>

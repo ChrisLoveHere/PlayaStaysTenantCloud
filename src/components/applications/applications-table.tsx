@@ -30,7 +30,13 @@ const stageVariant = (stage: string) => {
   return "secondary";
 };
 
-export function ApplicationsTable({ items }: { items: ApplicationRow[] }) {
+export function ApplicationsTable({
+  items,
+  detailPathPrefix = "/landlord/prospects",
+}: {
+  items: ApplicationRow[];
+  detailPathPrefix?: string;
+}) {
   if (items.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">No applications yet.</p>
@@ -73,7 +79,7 @@ export function ApplicationsTable({ items }: { items: ApplicationRow[] }) {
               </TableCell>
               <TableCell className="text-right">
                 <Link
-                  href={`/landlord/prospects/${app.id}`}
+                  href={`${detailPathPrefix}/${app.id}`}
                   className="text-sm text-primary hover:underline"
                 >
                   Review

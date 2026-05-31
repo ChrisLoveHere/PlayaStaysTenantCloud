@@ -7,10 +7,12 @@ import {
   leases,
   notificationLog,
   properties,
+  prospects,
   rentPayments,
   showings,
   tenants,
   users,
+  agentProfiles,
 } from "@/lib/db/schema";
 import type { NotificationType } from "@/lib/db/schema";
 import { getLandlordNotifyEmail } from "@/lib/queries/settings";
@@ -161,6 +163,39 @@ export async function getUpcomingLeaseRenewals(daysAhead = 60) {
       )
     )
     .orderBy(leases.endDate);
+}
+
+export async function getShowingsFor24hReminder() {
+  const now = new Date();
+  const windowStart = new Date(now.getTime() + 20 * 60 * 60 * 1000);
+  const windowEnd = new Date(now.getTime() + 28 * 60 * 60 * 1000);
+
+  const prospectUser = alias(users, "prospect_user");
+  const agentUser = alias(users, "agent_user");
+
+  return db
+    .select({
+      id: showings.id,
+      scheduledAt: showings.scheduledAt,
+      propertyCode: properties.propertyCode,
+      prospectName: prospectUser.name,
+      prospectEmail: prospectUser.email,
+      agentName: agentUser.name,
+      agentEmail: agentUser.email,
+    })
+    .from(showings)
+    .innerJoin(properties, eq(showings.propertyId, properties.id))
+    .innerJoin(prospects, eq(showings.prospectId, prospects.id))
+    .innerJoin(prospectUser, eq(prospects.userId, prospectUser.id))
+    .innerJoin(agentProfiles, eq(showings.agentId, agentProfiles.id))
+    .innerJoin(agentUser, eq(agentProfiles.userId, agentUser.id))
+    .where(
+      and(
+        eq(showings.status, "scheduled"),
+        gte(showings.scheduledAt, windowStart),
+        lte(showings.scheduledAt, windowEnd)
+      )
+    );
 }
 
 export async function getAgentDashboardStats(agentProfileId: string) {

@@ -197,6 +197,23 @@ export const applicationStageHistory = pgTable("application_stage_history", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const prospectNotes = pgTable("prospect_notes", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  prospectId: text("prospect_id")
+    .notNull()
+    .references(() => prospects.id, { onDelete: "cascade" }),
+  applicationId: text("application_id").references(() => applications.id, {
+    onDelete: "cascade",
+  }),
+  authorId: text("author_id")
+    .notNull()
+    .references(() => users.id),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ─── Showings ─────────────────────────────────────────────────────────────────
 
 export const showings = pgTable("showings", {

@@ -92,6 +92,7 @@ export const NOTIFICATION_TYPES = [
   "overdue_rent_followup",
   "lease_renewal_60",
   "lease_renewal_30",
+  "showing_reminder_24h",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

@@ -3,11 +3,13 @@ import {
   leaseRenewalEmail,
   overdueRentLandlordEmail,
   overdueRentTenantEmail,
+  showingReminderEmail,
 } from "@/lib/email/templates";
 import {
   getLandlordEmail,
   getLeasesForRenewalReminder,
   getOverduePaymentsForEmail,
+  getShowingsFor24hReminder,
   logNotification,
   markOverdueRentPayments,
   wasNotificationSent,
@@ -21,6 +23,7 @@ export type ReminderRunResult = {
   overdueEmailsSent: number;
   renewal60Sent: number;
   renewal30Sent: number;
+  showingRemindersSent: number;
   errors: string[];
 };
 
@@ -33,6 +36,7 @@ export async function runDailyReminders(): Promise<ReminderRunResult> {
     overdueEmailsSent: 0,
     renewal60Sent: 0,
     renewal30Sent: 0,
+    showingRemindersSent: 0,
     errors: [],
   };
 
@@ -65,6 +69,14 @@ export async function runDailyReminders(): Promise<ReminderRunResult> {
   } catch (err) {
     result.errors.push(
       `Renewal 30d: ${err instanceof Error ? err.message : "Unknown error"}`
+    );
+  }
+
+  try {
+    result.showingRemindersSent = await sendShowingReminders();
+  } catch (err) {
+    result.errors.push(
+      `Showing 24h: ${err instanceof Error ? err.message : "Unknown error"}`
     );
   }
 
@@ -172,6 +184,52 @@ async function sendLeaseRenewalReminders(
     }
 
     await logNotification(notificationType, "lease", lease.id);
+    sent++;
+  }
+
+  return sent;
+}
+
+async function sendShowingReminders() {
+  const showings = await getShowingsFor24hReminder();
+  let sent = 0;
+
+  for (const showing of showings) {
+    if (await wasNotificationSent("showing_reminder_24h", showing.id)) continue;
+
+    if (showing.agentEmail) {
+      const agentMail = showingReminderEmail({
+        recipientName: showing.agentName ?? "Agent",
+        propertyCode: showing.propertyCode,
+        scheduledAt: showing.scheduledAt,
+        prospectName: showing.prospectName ?? "Prospect",
+        agentName: showing.agentName ?? "Agent",
+        forAgent: true,
+      });
+      await sendEmail({
+        to: showing.agentEmail,
+        subject: agentMail.subject,
+        html: agentMail.html,
+      });
+    }
+
+    if (showing.prospectEmail) {
+      const prospectMail = showingReminderEmail({
+        recipientName: showing.prospectName ?? "Prospect",
+        propertyCode: showing.propertyCode,
+        scheduledAt: showing.scheduledAt,
+        prospectName: showing.prospectName ?? "Prospect",
+        agentName: showing.agentName ?? "Agent",
+        forAgent: false,
+      });
+      await sendEmail({
+        to: showing.prospectEmail,
+        subject: prospectMail.subject,
+        html: prospectMail.html,
+      });
+    }
+
+    await logNotification("showing_reminder_24h", "showing", showing.id);
     sent++;
   }
 

@@ -24,7 +24,7 @@ export default async function AgentProspectsPage() {
       navItems={agentNav}
       userName={session.user.name}
     >
-      <ApplicationsTable items={applications} />
+      <ApplicationsTable items={applications} detailPathPrefix="/agent/prospects" />
     </DashboardShell>
   );
 }

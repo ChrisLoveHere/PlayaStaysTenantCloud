@@ -13,6 +13,7 @@ import {
   properties,
   propertyPhotos,
   prospects,
+  prospectNotes,
   rentPaymentClaims,
   rentPayments,
   sessions,
@@ -74,6 +75,7 @@ export const prospectsRelations = relations(prospects, ({ one, many }) => ({
   }),
   applications: many(applications),
   showings: many(showings),
+  notes: many(prospectNotes),
   tenant: one(tenants, {
     fields: [prospects.id],
     references: [tenants.prospectId],
@@ -95,6 +97,22 @@ export const applicationsRelations = relations(applications, ({ one, many }) => 
   }),
   stageHistory: many(applicationStageHistory),
   showings: many(showings),
+  notes: many(prospectNotes),
+}));
+
+export const prospectNotesRelations = relations(prospectNotes, ({ one }) => ({
+  prospect: one(prospects, {
+    fields: [prospectNotes.prospectId],
+    references: [prospects.id],
+  }),
+  application: one(applications, {
+    fields: [prospectNotes.applicationId],
+    references: [applications.id],
+  }),
+  author: one(users, {
+    fields: [prospectNotes.authorId],
+    references: [users.id],
+  }),
 }));
 
 export const applicationStageHistoryRelations = relations(

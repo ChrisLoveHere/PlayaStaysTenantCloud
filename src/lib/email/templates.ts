@@ -229,3 +229,96 @@ export function buildReceiptHtml(input: {
      <p style="font-size:12px;color:#666;">PlayaStays · Quintana Roo, Mexico · MXN</p>`
   );
 }
+
+export function showingReminderEmail(input: {
+  recipientName: string;
+  propertyCode: string;
+  scheduledAt: Date;
+  prospectName: string;
+  agentName: string;
+  forAgent: boolean;
+}) {
+  const when = input.scheduledAt.toLocaleString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const dashboardUrl = input.forAgent
+    ? `${appUrl}/agent/showings`
+    : `${appUrl}/portal/properties`;
+
+  return {
+    subject: `Showing reminder — ${input.propertyCode}`,
+    html: layout(
+      "Showing tomorrow",
+      `<p>Hi ${input.recipientName},</p>
+       <p>This is a reminder for a property showing at <strong>${input.propertyCode}</strong>
+       scheduled for <strong>${when}</strong>.</p>
+       <p><strong>Prospect:</strong> ${input.prospectName}<br/>
+       <strong>Agent:</strong> ${input.agentName}</p>
+       <p><a href="${dashboardUrl}">View details</a></p>`
+    ),
+  };
+}
+
+type CommissionLine = {
+  propertyCode: string;
+  tenantName: string;
+  amount: number;
+  status: string;
+  createdAt: Date;
+  paidAt: Date | null;
+};
+
+export function buildCommissionStatementHtml(input: {
+  agentName: string;
+  generatedAt: Date;
+  pendingTotal: number;
+  paidTotal: number;
+  items: CommissionLine[];
+}) {
+  const generated = input.generatedAt.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const rows = input.items
+    .map((c) => {
+      const date = (c.paidAt ?? c.createdAt).toLocaleDateString("en-US");
+      return `<tr>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${c.propertyCode}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${c.tenantName}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${c.status}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${date}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">${formatMXN(c.amount)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return layout(
+    "Commission statement",
+    `<p><strong>Agent:</strong> ${input.agentName}<br/>
+     <strong>Generated:</strong> ${generated}</p>
+     <table style="width:100%;margin:16px 0;border-collapse:collapse;font-size:14px;">
+       <thead>
+         <tr style="background:#f5f5f5;">
+           <th style="padding:8px;text-align:left;">Property</th>
+           <th style="padding:8px;text-align:left;">Tenant</th>
+           <th style="padding:8px;text-align:left;">Status</th>
+           <th style="padding:8px;text-align:left;">Date</th>
+           <th style="padding:8px;text-align:right;">Amount</th>
+         </tr>
+       </thead>
+       <tbody>${rows || `<tr><td colspan="5" style="padding:16px;color:#666;">No commissions yet.</td></tr>`}</tbody>
+     </table>
+     <table style="width:100%;margin-top:8px;">
+       <tr><td style="padding:4px 0;color:#666;">Pending total</td><td style="text-align:right;font-weight:600;">${formatMXN(input.pendingTotal)}</td></tr>
+       <tr><td style="padding:4px 0;color:#666;">Paid total</td><td style="text-align:right;font-weight:600;">${formatMXN(input.paidTotal)}</td></tr>
+     </table>
+     <p style="font-size:12px;color:#666;margin-top:24px;">PlayaStays · Quintana Roo, Mexico · MXN</p>`
+  );
+}

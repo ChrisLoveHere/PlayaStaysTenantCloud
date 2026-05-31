@@ -1,15 +1,13 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
-import { ApplicationReviewForm } from "@/components/applications/application-review-form";
-import { DocumentsPanel } from "@/components/documents/documents-panel";
 import { ProspectNotesPanel } from "@/components/prospects/prospect-notes-panel";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { landlordNav } from "@/lib/pages/placeholder";
+import { getAgentProfileByUserId } from "@/lib/auth/agent";
+import { agentNav } from "@/lib/pages/placeholder";
 import { getApplicationDetail } from "@/lib/queries/applications";
-import { getDocumentsForEntity } from "@/lib/queries/documents";
 import { getProspectNotes } from "@/lib/queries/prospect-notes";
 import {
   applicationStageLabel,
@@ -22,37 +20,34 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function ApplicationDetailPage({ params }: PageProps) {
+export default async function AgentApplicationDetailPage({ params }: PageProps) {
   const session = await auth();
+  if (!session?.user || session.user.role !== "agent") redirect("/login");
+
+  const profile = await getAgentProfileByUserId(session.user.id);
+  if (!profile) redirect("/agent");
+
   const { id } = await params;
   const detail = await getApplicationDetail(id);
-
   if (!detail) notFound();
 
-  const applicationDocuments = await getDocumentsForEntity("application", id);
-  const prospectNotesList = await getProspectNotes(detail.application.prospectId);
+  const { application: app, history } = detail;
+  if (app.assignedAgentId !== profile.id) notFound();
 
-  const { application: app, history, agents } = detail;
-  const employment = app.employment
-    ? (JSON.parse(app.employment) as {
-        employer?: string;
-        position?: string;
-        yearsEmployed?: number;
-      })
-    : null;
+  const notes = await getProspectNotes(app.prospectId);
 
   return (
     <DashboardShell
       title="PlayaStays"
-      subtitle={`Application — ${app.propertyCode}`}
-      navItems={landlordNav}
-      userName={session?.user?.name}
+      subtitle={`Prospect — ${app.propertyCode}`}
+      navItems={agentNav}
+      userName={session.user.name}
     >
       <Link
-        href="/landlord/prospects"
+        href="/agent/prospects"
         className="mb-4 inline-block text-sm text-primary hover:underline"
       >
-        ← Back to applications
+        ← Back to prospects
       </Link>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -66,30 +61,11 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
               <Row label="Email" value={app.prospectEmail} />
               <Row label="Phone" value={app.prospectPhone ?? "—"} />
               <Row
-                label="Income"
-                value={app.income ? formatMXN(app.income) + "/mo" : "—"}
+                label="Stage"
+                value={applicationStageLabel(app.stage)}
               />
-              {employment && (
-                <>
-                  <Row label="Employer" value={employment.employer ?? "—"} />
-                  <Row label="Position" value={employment.position ?? "—"} />
-                  <Row
-                    label="Years employed"
-                    value={String(employment.yearsEmployed ?? "—")}
-                  />
-                </>
-              )}
-              {app.previousRentals && (
-                <div>
-                  <p className="text-muted-foreground">Previous rentals</p>
-                  <p className="mt-1 whitespace-pre-wrap">{app.previousRentals}</p>
-                </div>
-              )}
-              {app.references && (
-                <div>
-                  <p className="text-muted-foreground">References</p>
-                  <p className="mt-1 whitespace-pre-wrap">{app.references}</p>
-                </div>
+              {app.income != null && (
+                <Row label="Income" value={`${formatMXN(app.income)}/mo`} />
               )}
             </CardContent>
           </Card>
@@ -111,39 +87,16 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
                   cp: app.cp,
                 })}
               />
-              <Row label="Rent" value={formatMXN(app.monthlyRent) + "/mo"} />
-              <Row
-                label="Deposit"
-                value={formatMXN(app.securityDeposit)}
-              />
+              <Row label="Rent" value={`${formatMXN(app.monthlyRent)}/mo`} />
             </CardContent>
           </Card>
         </div>
 
         <div className="space-y-4">
-          <ApplicationReviewForm
-            applicationId={app.id}
-            stage={app.stage}
-            rating={app.rating}
-            landlordNotes={app.landlordNotes}
-            assignedAgentId={app.assignedAgentId}
-            agents={agents}
-          />
-
-          <DocumentsPanel
-            entityType="application"
-            entityId={app.id}
-            documents={applicationDocuments}
-            canUpload
-            canDelete
-            title="Application documents"
-            description="Screening files, ID copies, income proof, and references."
-          />
-
           <ProspectNotesPanel
             prospectId={app.prospectId}
             applicationId={app.id}
-            notes={prospectNotesList}
+            notes={notes}
           />
 
           <Card>
@@ -169,9 +122,7 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
                       {new Date(h.createdAt).toLocaleString("en-US")}
                       {h.changedByName && ` · ${h.changedByName}`}
                     </p>
-                    {h.notes && (
-                      <p className="mt-1 text-sm">{h.notes}</p>
-                    )}
+                    {h.notes && <p className="mt-1 text-sm">{h.notes}</p>}
                   </div>
                 ))
               )}

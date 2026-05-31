@@ -6,10 +6,11 @@ Long-term rental management across Quintana Roo — Playa del Carmen, Tulum, Coz
 
 - **Next.js 16** (App Router) + React + TypeScript
 - **Tailwind CSS** + **shadcn/ui**
-- **SQLite** + **Drizzle ORM** (easy local start; Postgres-ready path documented)
+- **Neon Postgres** + **Drizzle ORM**
 - **Auth.js** (NextAuth v5) with role-based access
+- **Resend** for transactional email (renewals, overdue rent, showing reminders)
 - **FullCalendar** (showings + agent availability)
-- Local file uploads (upgradeable to S3/Vercel Blob)
+- **Vercel Blob** for file uploads (local `./public/uploads` in dev)
 
 ## Quick start
 
@@ -95,6 +96,8 @@ See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for full ERD, relationships, 
 - **commissions** — recorded when lease signed
 - **maintenance_requests** — tenant-submitted tickets
 - **rent_payments** — manual SPEI-friendly tracking
+- **rent_payment_claims** — tenant-reported payments pending landlord review
+- **prospect_notes** — internal notes on prospects/applications
 - **documents** — polymorphic file attachments
 
 ## Scripts
@@ -102,7 +105,7 @@ See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for full ERD, relationships, 
 | Command        | Description              |
 |----------------|--------------------------|
 | `npm run dev`  | Start development server |
-| `npm run db:push` | Push schema to SQLite |
+| `npm run db:push` | Push schema to Neon |
 | `npm run db:seed` | Seed demo accounts    |
 | `npm run db:studio` | Drizzle Studio GUI  |
 
@@ -115,6 +118,9 @@ Add these environment variables in [Vercel project settings](https://vercel.com/
 | `DATABASE_URL` | Neon **pooled** connection string |
 | `AUTH_SECRET` | `openssl rand -base64 32` |
 | `AUTH_URL` | `https://playa-stays-tenant-cloud.vercel.app` |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token (production uploads) |
+| `RESEND_API_KEY` | Optional — email reminders |
+| `CRON_SECRET` | Optional — secures `/api/cron/reminders` |
 
 After first deploy, run locally against production Neon:
 

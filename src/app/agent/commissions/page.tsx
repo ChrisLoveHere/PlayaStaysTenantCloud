@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getAgentProfileByUserId } from "@/lib/auth/agent";
@@ -31,6 +32,14 @@ export default async function AgentCommissionsPage() {
       navItems={agentNav}
       userName={session.user.name}
     >
+      <div className="mb-4 flex justify-end print:hidden">
+        <Link
+          href="/agent/commissions/statement"
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          View commission statement →
+        </Link>
+      </div>
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
