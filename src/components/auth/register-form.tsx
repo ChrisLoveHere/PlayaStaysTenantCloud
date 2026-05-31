@@ -23,7 +23,7 @@ export function RegisterForm() {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Create account</CardTitle>
         <CardDescription>
-          Register as a prospect to apply for properties
+          Register to start your rental application
         </CardDescription>
       </CardHeader>
       <form action={formAction}>
@@ -34,28 +34,39 @@ export function RegisterForm() {
             </p>
           )}
           <input type="hidden" name="role" value="prospect" />
-          <div className="space-y-2">
-            <Label htmlFor="name">Full name</Label>
-            <Input id="name" name="name" required />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First name *</Label>
+              <Input id="firstName" name="firstName" required autoComplete="given-name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last name *</Label>
+              <Input id="lastName" name="lastName" required autoComplete="family-name" />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required />
+            <Label htmlFor="email">Email *</Label>
+            <Input id="email" name="email" type="email" required autoComplete="email" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" name="phone" type="tel" />
+            <Label htmlFor="phone">Phone *</Label>
+            <Input id="phone" name="phone" type="tel" required autoComplete="tel" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Password *</Label>
             <Input
               id="password"
               name="password"
               type="password"
               minLength={8}
               required
+              autoComplete="new-password"
             />
           </div>
+          <p className="text-xs text-muted-foreground">
+            After signing in, complete your full application on the portal before
+            applying to a property.
+          </p>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={pending}>

@@ -19,6 +19,15 @@ export async function getProspectByUserId(userId: string) {
   return prospect ?? null;
 }
 
+export async function getUserPhone(userId: string) {
+  const [row] = await db
+    .select({ phone: users.phone })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return row?.phone ?? null;
+}
+
 export async function getApplicationsForProspect(prospectId: string) {
   return db
     .select({
@@ -105,6 +114,11 @@ export async function getApplicationDetail(id: string) {
       employment: prospects.employment,
       previousRentals: prospects.previousRentals,
       references: prospects.references,
+      firstName: prospects.firstName,
+      lastName: prospects.lastName,
+      currentAddress: prospects.currentAddress,
+      occupants: prospects.occupants,
+      pets: prospects.pets,
       prospectNotes: prospects.notes,
       prospectName: users.name,
       prospectEmail: users.email,
@@ -118,6 +132,7 @@ export async function getApplicationDetail(id: string) {
       cp: properties.cp,
       monthlyRent: properties.monthlyRent,
       securityDeposit: properties.securityDeposit,
+      commissionRate: properties.commissionRate,
     })
     .from(applications)
     .innerJoin(prospects, eq(applications.prospectId, prospects.id))

@@ -1,18 +1,41 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { ApplicationsTable } from "@/components/applications/applications-table";
+import { ListFilterBar } from "@/components/layout/list-filter-bar";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { landlordNav } from "@/lib/pages/placeholder";
 import { getApplicationsForLandlord } from "@/lib/queries/applications";
 import { APPLICATION_STAGES } from "@/lib/db/schema/enums";
 import { applicationStageLabel } from "@/lib/utils/format";
+import { matchesSearch } from "@/lib/utils/list-filters";
 
-export default async function ProspectsPage() {
+type PageProps = {
+  searchParams: Promise<{ q?: string; status?: string }>;
+};
+
+export default async function ProspectsPage({ searchParams }: PageProps) {
   const session = await auth();
+  const { q, status: statusFilter } = await searchParams;
   const allApplications = await getApplicationsForLandlord();
 
+  const filtered = allApplications.filter((a) => {
+    if (statusFilter && a.stage !== statusFilter) return false;
+    return matchesSearch(q, [
+      a.prospectName,
+      a.prospectEmail,
+      a.propertyCode,
+      a.ciudad,
+    ]);
+  });
+
   const byStage = (stage: string) =>
-    allApplications.filter((a) => a.stage === stage);
+    filtered.filter((a) => a.stage === stage);
+
+  const stageOptions = APPLICATION_STAGES.map((s) => ({
+    value: s,
+    label: applicationStageLabel(s),
+  }));
 
   return (
     <DashboardShell
@@ -21,9 +44,16 @@ export default async function ProspectsPage() {
       navItems={landlordNav}
       userName={session?.user?.name}
     >
-      <Tabs defaultValue="all">
+      <Suspense>
+        <ListFilterBar
+          searchPlaceholder="Search prospect, email, or property…"
+          statusOptions={stageOptions}
+        />
+      </Suspense>
+
+      <Tabs defaultValue={statusFilter ?? "all"}>
         <TabsList className="mb-4 flex h-auto flex-wrap gap-1">
-          <TabsTrigger value="all">All ({allApplications.length})</TabsTrigger>
+          <TabsTrigger value="all">All ({filtered.length})</TabsTrigger>
           {APPLICATION_STAGES.filter((s) => s !== "rejected").map((stage) => (
             <TabsTrigger key={stage} value={stage}>
               {applicationStageLabel(stage)} ({byStage(stage).length})
@@ -32,7 +62,7 @@ export default async function ProspectsPage() {
         </TabsList>
 
         <TabsContent value="all">
-          <ApplicationsTable items={allApplications} />
+          <ApplicationsTable items={filtered} />
         </TabsContent>
         {APPLICATION_STAGES.map((stage) => (
           <TabsContent key={stage} value={stage}>

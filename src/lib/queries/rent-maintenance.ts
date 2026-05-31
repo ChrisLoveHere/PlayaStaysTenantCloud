@@ -94,10 +94,36 @@ export async function getMaintenanceForLandlord() {
       location: properties.location,
     })
     .from(maintenanceRequests)
-    .innerJoin(tenants, eq(maintenanceRequests.tenantId, tenants.id))
-    .innerJoin(tenantUser, eq(tenants.userId, tenantUser.id))
     .innerJoin(properties, eq(maintenanceRequests.propertyId, properties.id))
+    .leftJoin(tenants, eq(maintenanceRequests.tenantId, tenants.id))
+    .leftJoin(tenantUser, eq(tenants.userId, tenantUser.id))
     .orderBy(desc(maintenanceRequests.submittedAt));
+}
+
+export async function getPropertiesForMaintenance() {
+  return db
+    .select({
+      id: properties.id,
+      propertyCode: properties.propertyCode,
+      location: properties.location,
+      status: properties.status,
+    })
+    .from(properties)
+    .orderBy(properties.propertyCode);
+}
+
+export async function getTenantsByProperty(propertyId: string) {
+  const tenantUser = alias(users, "tenant_user");
+
+  return db
+    .select({
+      id: tenants.id,
+      tenantName: tenantUser.name,
+    })
+    .from(tenants)
+    .innerJoin(tenantUser, eq(tenants.userId, tenantUser.id))
+    .where(eq(tenants.propertyId, propertyId))
+    .orderBy(tenantUser.name);
 }
 
 export async function getMaintenanceForTenant(tenantId: string) {

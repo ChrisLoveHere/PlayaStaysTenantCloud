@@ -12,9 +12,11 @@ import {
   getApplicationsForProspect,
   getAvailableProperties,
   getProspectByUserId,
+  getUserPhone,
 } from "@/lib/queries/applications";
 import { getAvailablePropertyById } from "@/lib/queries/properties";
 import { getActiveAgents } from "@/lib/queries/showings";
+import { isProspectProfileComplete } from "@/lib/utils/prospect-profile";
 import { getLocationLabel } from "@/lib/constants/locations";
 import { formatMXN } from "@/lib/utils/format";
 
@@ -52,7 +54,10 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   if (isProspect) {
     const prospect = await getProspectByUserId(session.user.id);
     if (prospect) {
-      profileComplete = !!prospect.income && !!prospect.employment;
+      const userPhone = await getUserPhone(session.user.id);
+      profileComplete = isProspectProfileComplete(prospect, {
+        phone: userPhone,
+      });
       const applications = await getApplicationsForProspect(prospect.id);
       hasApplication = applications.some((a) => a.propertyId === property.id);
     }

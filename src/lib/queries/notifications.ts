@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db";
 import {
@@ -13,6 +13,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import type { UserRole } from "@/lib/db/schema";
+import { applicationStageLabel } from "@/lib/utils/format";
 
 export type InAppNotification = {
   id: string;
@@ -22,7 +23,11 @@ export type InAppNotification = {
     | "showing_request"
     | "overdue_rent"
     | "maintenance"
-    | "upcoming_showing";
+    | "upcoming_showing"
+    | "claim_result"
+    | "maintenance_update"
+    | "showing_confirmed"
+    | "application_update";
   title: string;
   message: string;
   href: string;
@@ -244,13 +249,174 @@ export async function getAgentNotifications(
   return items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
+export async function getTenantNotifications(userId: string): Promise<InAppNotification[]> {
+  const items: InAppNotification[] = [];
+
+  const [tenant] = await db
+    .select({ id: tenants.id })
+    .from(tenants)
+    .where(eq(tenants.userId, userId))
+    .limit(1);
+
+  if (!tenant) return [];
+
+  const claimResults = await db
+    .select({
+      id: rentPaymentClaims.id,
+      status: rentPaymentClaims.status,
+      reviewedAt: rentPaymentClaims.reviewedAt,
+      landlordNotes: rentPaymentClaims.landlordNotes,
+      propertyCode: properties.propertyCode,
+    })
+    .from(rentPaymentClaims)
+    .innerJoin(rentPayments, eq(rentPaymentClaims.rentPaymentId, rentPayments.id))
+    .innerJoin(properties, eq(rentPayments.propertyId, properties.id))
+    .where(
+      and(
+        eq(rentPaymentClaims.tenantId, tenant.id),
+        inArray(rentPaymentClaims.status, ["approved", "rejected"])
+      )
+    )
+    .orderBy(desc(rentPaymentClaims.reviewedAt))
+    .limit(5);
+
+  for (const c of claimResults) {
+    if (!c.reviewedAt) continue;
+    items.push({
+      id: `claim-result-${c.id}`,
+      type: "claim_result",
+      title:
+        c.status === "approved" ? "Payment confirmed" : "Payment report declined",
+      message:
+        c.status === "approved"
+          ? `Your SPEI payment for ${c.propertyCode} was confirmed`
+          : c.landlordNotes ?? `Payment report for ${c.propertyCode} was declined`,
+      href: "/portal/payments",
+      createdAt: c.reviewedAt,
+    });
+  }
+
+  const activeMaint = await db
+    .select({
+      id: maintenanceRequests.id,
+      title: maintenanceRequests.title,
+      status: maintenanceRequests.status,
+      submittedAt: maintenanceRequests.submittedAt,
+    })
+    .from(maintenanceRequests)
+    .where(
+      and(
+        eq(maintenanceRequests.tenantId, tenant.id),
+        inArray(maintenanceRequests.status, ["in_progress", "resolved"])
+      )
+    )
+    .orderBy(desc(maintenanceRequests.submittedAt))
+    .limit(5);
+
+  for (const m of activeMaint) {
+    items.push({
+      id: `maint-update-${m.id}-${m.status}`,
+      type: "maintenance_update",
+      title:
+        m.status === "resolved" ? "Maintenance resolved" : "Maintenance in progress",
+      message: m.title,
+      href: "/portal/maintenance",
+      createdAt: m.submittedAt,
+    });
+  }
+
+  return items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+export async function getProspectNotifications(
+  userId: string
+): Promise<InAppNotification[]> {
+  const items: InAppNotification[] = [];
+
+  const [prospect] = await db
+    .select({ id: prospects.id })
+    .from(prospects)
+    .where(eq(prospects.userId, userId))
+    .limit(1);
+
+  if (!prospect) return [];
+
+  const apps = await db
+    .select({
+      id: applications.id,
+      stage: applications.stage,
+      updatedAt: applications.updatedAt,
+      propertyCode: properties.propertyCode,
+    })
+    .from(applications)
+    .innerJoin(properties, eq(applications.propertyId, properties.id))
+    .where(
+      and(
+        eq(applications.prospectId, prospect.id),
+        sql`${applications.stage} not in ('rejected', 'new')`
+      )
+    )
+    .orderBy(desc(applications.updatedAt))
+    .limit(5);
+
+  for (const app of apps) {
+    items.push({
+      id: `app-update-${app.id}`,
+      type: "application_update",
+      title: "Application update",
+      message: `${app.propertyCode} · ${applicationStageLabel(app.stage)}`,
+      href: "/portal/application",
+      createdAt: app.updatedAt,
+    });
+  }
+
+  const now = new Date();
+  const upcomingShowings = await db
+    .select({
+      id: showings.id,
+      scheduledAt: showings.scheduledAt,
+      propertyCode: properties.propertyCode,
+      status: showings.status,
+    })
+    .from(showings)
+    .innerJoin(properties, eq(showings.propertyId, properties.id))
+    .where(
+      and(
+        eq(showings.prospectId, prospect.id),
+        eq(showings.status, "scheduled"),
+        gte(showings.scheduledAt, now)
+      )
+    )
+    .orderBy(showings.scheduledAt)
+    .limit(5);
+
+  for (const s of upcomingShowings) {
+    items.push({
+      id: `showing-${s.id}`,
+      type: "showing_confirmed",
+      title: "Upcoming showing",
+      message: `${s.propertyCode} · ${s.scheduledAt.toLocaleString("en-US")}`,
+      href: "/portal/properties",
+      createdAt: s.scheduledAt,
+    });
+  }
+
+  return items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
 export async function getNotificationsForRole(
   role: UserRole,
-  agentProfileId?: string
+  options?: { agentProfileId?: string; userId?: string }
 ): Promise<InAppNotification[]> {
   if (role === "landlord") return getLandlordNotifications();
-  if (role === "agent" && agentProfileId) {
-    return getAgentNotifications(agentProfileId);
+  if (role === "agent" && options?.agentProfileId) {
+    return getAgentNotifications(options.agentProfileId);
+  }
+  if (role === "tenant" && options?.userId) {
+    return getTenantNotifications(options.userId);
+  }
+  if (role === "prospect" && options?.userId) {
+    return getProspectNotifications(options.userId);
   }
   return [];
 }

@@ -11,9 +11,11 @@ import {
   getApplicationsForProspect,
   getAvailableProperties,
   getProspectByUserId,
+  getUserPhone,
 } from "@/lib/queries/applications";
 import { getDocumentsForEntity } from "@/lib/queries/documents";
 import { getShowingsForProspect } from "@/lib/queries/showings";
+import { isProspectProfileComplete } from "@/lib/utils/prospect-profile";
 
 export default async function ApplicationPage() {
   const session = await auth();
@@ -24,13 +26,17 @@ export default async function ApplicationPage() {
   const prospect = await getProspectByUserId(session.user.id);
   if (!prospect) redirect("/portal");
 
-  const [myApplications, availableProperties, myShowings] = await Promise.all([
-    getApplicationsForProspect(prospect.id),
-    getAvailableProperties(),
-    getShowingsForProspect(prospect.id),
-  ]);
+  const [myApplications, availableProperties, myShowings, userPhone] =
+    await Promise.all([
+      getApplicationsForProspect(prospect.id),
+      getAvailableProperties(),
+      getShowingsForProspect(prospect.id),
+      getUserPhone(session.user.id),
+    ]);
 
-  const profileComplete = !!prospect.income && !!prospect.employment;
+  const profileComplete = isProspectProfileComplete(prospect, {
+    phone: userPhone,
+  });
 
   const applicationDocGroups = await Promise.all(
     myApplications.map(async (app) => ({
@@ -48,7 +54,12 @@ export default async function ApplicationPage() {
       userName={session.user.name}
     >
       <div className="space-y-6">
-        <ProspectProfileForm profile={prospect} />
+        <ProspectProfileForm
+          profile={{
+            ...prospect,
+            phone: userPhone,
+          }}
+        />
         <ApplyToPropertyForm
           properties={availableProperties}
           profileComplete={profileComplete}

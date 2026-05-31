@@ -86,7 +86,7 @@ export default async function PortalMaintenancePage() {
         <SubmitMaintenanceForm />
         <div>
           <h2 className="mb-4 text-lg font-semibold">Your requests</h2>
-          <MaintenanceTable items={items} />
+          <MaintenanceTable items={items} tenantView />
         </div>
       </div>
     </DashboardShell>

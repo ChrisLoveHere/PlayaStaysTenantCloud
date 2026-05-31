@@ -26,6 +26,14 @@ export const maintenanceRequestSchema = z.object({
   priority: z.enum(MAINTENANCE_PRIORITIES),
 });
 
+export const landlordMaintenanceSchema = z.object({
+  propertyId: z.string().min(1, "Select a property"),
+  tenantId: z.string().optional(),
+  title: z.string().min(1, "Title required"),
+  description: z.string().min(1, "Description required"),
+  priority: z.enum(MAINTENANCE_PRIORITIES),
+});
+
 export const updateMaintenanceSchema = z.object({
   status: z.enum(MAINTENANCE_STATUSES),
 });

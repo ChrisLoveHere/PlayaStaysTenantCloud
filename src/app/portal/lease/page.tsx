@@ -85,6 +85,16 @@ export default async function LeasePage() {
       userName={session.user.name}
     >
       <div className="space-y-6">
+        {(lease.status === "draft" || lease.status === "sent") && (
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardContent className="py-4 text-sm">
+              {lease.status === "draft"
+                ? "Your lease is being prepared. Documents will appear here once your landlord sends it for signing."
+                : "Your lease has been sent. Review and sign the documents below when ready."}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center gap-2">
@@ -144,7 +154,11 @@ export default async function LeasePage() {
           entityId={lease.id}
           documents={leaseDocuments}
           title="Lease documents"
-          description="Signed lease and related files from your landlord."
+          description={
+            leaseDocuments.length === 0 && !lease.documentUrl
+              ? "Your landlord will upload the signed lease and related files here."
+              : "Signed lease and related files from your landlord."
+          }
         />
 
         {keycodes && (

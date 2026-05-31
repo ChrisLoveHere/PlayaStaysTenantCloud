@@ -5,6 +5,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type {
   ApplicationStage,
@@ -128,6 +129,8 @@ export const properties = pgTable("properties", {
   description: text("description"),
   keycodes: text("keycodes"),
   amenities: text("amenities"),
+  /** Agent commission override for this listing (percent, e.g. 10 = 10%) */
+  commissionRate: integer("commission_rate"),
   ...timestamps,
 });
 
@@ -154,6 +157,11 @@ export const prospects = pgTable("prospects", {
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "cascade" }),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  currentAddress: text("current_address"),
+  occupants: integer("occupants"),
+  pets: text("pets"),
   income: integer("income"),
   employment: text("employment"),
   previousRentals: text("previous_rentals"),
@@ -328,9 +336,9 @@ export const maintenanceRequests = pgTable("maintenance_requests", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  tenantId: text("tenant_id")
-    .notNull()
-    .references(() => tenants.id, { onDelete: "cascade" }),
+  tenantId: text("tenant_id").references(() => tenants.id, {
+    onDelete: "cascade",
+  }),
   propertyId: text("property_id")
     .notNull()
     .references(() => properties.id),
@@ -437,6 +445,26 @@ export const notificationLog = pgTable("notification_log", {
   entityId: text("entity_id").notNull(),
   sentAt: timestamp("sent_at").notNull().defaultNow(),
 });
+
+export const notificationReads = pgTable(
+  "notification_reads",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    notificationKey: text("notification_key").notNull(),
+    readAt: timestamp("read_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    userNotificationUnique: uniqueIndex("notification_reads_user_key").on(
+      t.userId,
+      t.notificationKey
+    ),
+  })
+);
 
 export const landlordSettings = pgTable("landlord_settings", {
   id: text("id").primaryKey().default("default"),

@@ -26,6 +26,7 @@ import {
   prospectProfileSchema,
 } from "@/lib/validations/application";
 import { parseMXNToCents } from "@/lib/utils/format";
+import { isProspectProfileComplete } from "@/lib/utils/prospect-profile";
 
 export type ApplicationActionState = {
   error?: string;
@@ -71,12 +72,18 @@ export async function saveProspectProfile(
 ): Promise<ApplicationActionState> {
   const session = await requireProspect();
   const parsed = prospectProfileSchema.safeParse({
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    phone: formData.get("phone"),
+    currentAddress: formData.get("currentAddress"),
+    occupants: formData.get("occupants"),
+    pets: formData.get("pets") || undefined,
     income: formData.get("income"),
     employer: formData.get("employer"),
     position: formData.get("position"),
     yearsEmployed: formData.get("yearsEmployed"),
-    previousRentals: formData.get("previousRentals") || undefined,
-    references: formData.get("references") || undefined,
+    previousRentals: formData.get("previousRentals"),
+    references: formData.get("references"),
   });
 
   if (!parsed.success) {
@@ -90,17 +97,38 @@ export async function saveProspectProfile(
   const prospect = await getProspectByUserId(session.user.id);
   if (!prospect) return { error: "Prospect profile not found." };
 
+  const occupants = parseInt(data.occupants, 10);
+  if (Number.isNaN(occupants) || occupants < 1) {
+    return { error: "Number of occupants must be at least 1." };
+  }
+
+  const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
+
+  await db
+    .update(users)
+    .set({
+      name: fullName,
+      phone: data.phone.trim(),
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, session.user.id));
+
   await db
     .update(prospects)
     .set({
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      currentAddress: data.currentAddress.trim(),
+      occupants,
+      pets: data.pets?.trim() || null,
       income: parseMXNToCents(data.income),
       employment: JSON.stringify({
         employer: data.employer,
         position: data.position,
         yearsEmployed: Number(data.yearsEmployed),
       }),
-      previousRentals: data.previousRentals?.trim() || null,
-      references: data.references?.trim() || null,
+      previousRentals: data.previousRentals.trim(),
+      references: data.references.trim(),
       updatedAt: new Date(),
     })
     .where(eq(prospects.id, prospect.id));
@@ -125,9 +153,15 @@ export async function applyToProperty(
   const prospect = await getProspectByUserId(session.user.id);
   if (!prospect) return { error: "Prospect profile not found." };
 
-  if (!prospect.income) {
+  const [user] = await db
+    .select({ phone: users.phone })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  if (!isProspectProfileComplete(prospect, user)) {
     return {
-      error: "Complete your profile (income & employment) before applying.",
+      error: "Complete your rental application profile before applying.",
     };
   }
 

@@ -271,6 +271,12 @@ export async function updateLeaseStatus(
         .where(eq(agentProfiles.id, tenant.assignedAgentId))
         .limit(1);
 
+      const [property] = await db
+        .select({ commissionRate: properties.commissionRate })
+        .from(properties)
+        .where(eq(properties.id, lease.propertyId))
+        .limit(1);
+
       if (agent) {
         const [existing] = await db
           .select({ id: commissions.id })
@@ -279,19 +285,22 @@ export async function updateLeaseStatus(
           .limit(1);
 
         if (!existing) {
-          const amount = calculateCommission(
-            lease.monthlyRent,
-            agent.commissionType,
-            agent.commissionRate
-          );
+          const rate =
+            property?.commissionRate != null
+              ? property.commissionRate
+              : agent.commissionRate;
+          const type =
+            property?.commissionRate != null ? "percent" : agent.commissionType;
+
+          const amount = calculateCommission(lease.monthlyRent, type, rate);
 
           await db.insert(commissions).values({
             agentId: agent.id,
             leaseId,
             tenantId: tenant.id,
             amount,
-            rate: agent.commissionRate,
-            type: agent.commissionType,
+            rate,
+            type,
             status: "pending",
           });
         }

@@ -16,12 +16,14 @@ import type { UserRole } from "@/lib/db/schema";
 declare module "next-auth" {
   interface User {
     role?: UserRole;
+    phone?: string | null;
   }
   interface Session {
     user: {
       id: string;
       email: string;
       name?: string | null;
+      phone?: string | null;
       role: UserRole;
     };
   }
@@ -31,6 +33,7 @@ declare module "@auth/core/jwt" {
   interface JWT {
     id?: string;
     role?: UserRole;
+    phone?: string | null;
   }
 }
 
@@ -70,6 +73,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
+          phone: user.phone,
           role: user.role,
         };
       },

@@ -1,4 +1,4 @@
-import { and, count, eq, gte, lte, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, inArray, lte, sql, sum } from "drizzle-orm";
 import type { LocationFilter } from "@/lib/constants/locations";
 import { PLAYA_LOCATIONS, getLocationLabel } from "@/lib/constants/locations";
 import { db } from "@/lib/db";
@@ -7,6 +7,7 @@ import {
   properties,
   rentPayments,
   tenants,
+  commissions,
 } from "@/lib/db/schema";
 import type { PropertyStatus } from "@/lib/db/schema";
 
@@ -29,13 +30,18 @@ export type PortfolioStats = {
   available: number;
   maintenance: number;
   occupancyRate: number;
+  vacancyRate: number;
   monthlyRentPotential: number;
+  rentDueMonth: number;
   rentCollectedMonth: number;
+  rentOutstandingMonth: number;
+  collectionRate: number;
   rentCollectedYtd: number;
   overdueCount: number;
   openMaintenance: number;
   activeTenants: number;
   averageRent: number;
+  commissionsPendingTotal: number;
 };
 
 export type CityBreakdown = {
@@ -67,7 +73,7 @@ export async function getPortfolioStats(
   const yearStart = startOfYear(now);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-  const [[propStats], [tenantStats], [maintStats], [overdueStats], [monthRent], [ytdRent]] =
+  const [[propStats], [tenantStats], [maintStats], [overdueStats], [monthRent], [ytdRent], [dueMonth], [outstandingMonth], [commissionPending]] =
     await Promise.all([
       db
         .select({
@@ -134,24 +140,70 @@ export async function getPortfolioStats(
             ...(loc ? [loc] : [])
           )
         ),
+      db
+        .select({
+          total: sql<number>`coalesce(sum(${rentPayments.amount}), 0)::int`,
+        })
+        .from(rentPayments)
+        .innerJoin(properties, eq(rentPayments.propertyId, properties.id))
+        .where(
+          and(
+            gte(rentPayments.dueDate, monthStart),
+            lte(rentPayments.dueDate, monthEnd),
+            ...(loc ? [loc] : [])
+          )
+        ),
+      db
+        .select({
+          total: sql<number>`coalesce(sum(${rentPayments.amount}), 0)::int`,
+        })
+        .from(rentPayments)
+        .innerJoin(properties, eq(rentPayments.propertyId, properties.id))
+        .where(
+          and(
+            inArray(rentPayments.status, ["pending", "overdue", "partial"]),
+            gte(rentPayments.dueDate, monthStart),
+            lte(rentPayments.dueDate, monthEnd),
+            ...(loc ? [loc] : [])
+          )
+        ),
+      db
+        .select({
+          total: sql<number>`coalesce(sum(${commissions.amount}), 0)::int`,
+        })
+        .from(commissions)
+        .where(eq(commissions.status, "pending")),
     ]);
 
   const total = propStats?.total ?? 0;
   const occupied = Number(propStats?.occupied ?? 0);
+  const available = Number(propStats?.available ?? 0);
+  const rentDueMonth = Number(dueMonth?.total ?? 0);
+  const rentCollectedMonth = Number(monthRent?.total ?? 0);
+  const rentOutstandingMonth = Number(outstandingMonth?.total ?? 0);
+  const collectionRate =
+    rentDueMonth > 0
+      ? Math.round((rentCollectedMonth / rentDueMonth) * 100)
+      : 0;
 
   return {
     totalProperties: total,
     occupied,
-    available: Number(propStats?.available ?? 0),
+    available,
     maintenance: Number(propStats?.maintenance ?? 0),
     occupancyRate: total > 0 ? Math.round((occupied / total) * 100) : 0,
+    vacancyRate: total > 0 ? Math.round((available / total) * 100) : 0,
     monthlyRentPotential: Number(propStats?.rentPotential ?? 0),
-    rentCollectedMonth: Number(monthRent?.total ?? 0),
+    rentDueMonth,
+    rentCollectedMonth,
+    rentOutstandingMonth,
+    collectionRate,
     rentCollectedYtd: Number(ytdRent?.total ?? 0),
     overdueCount: overdueStats?.count ?? 0,
     openMaintenance: maintStats?.count ?? 0,
     activeTenants: tenantStats?.count ?? 0,
     averageRent: Number(propStats?.avgRent ?? 0),
+    commissionsPendingTotal: Number(commissionPending?.total ?? 0),
   };
 }
 

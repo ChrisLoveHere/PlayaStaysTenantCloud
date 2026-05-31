@@ -16,6 +16,7 @@ import {
   prospectNotes,
   rentPaymentClaims,
   rentPayments,
+  notificationReads,
   sessions,
   showings,
   tenants,
@@ -37,6 +38,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [tenants.userId],
   }),
+  notificationReads: many(notificationReads),
 }));
 
 export const agentProfilesRelations = relations(agentProfiles, ({ one, many }) => ({

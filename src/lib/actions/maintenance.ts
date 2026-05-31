@@ -11,6 +11,7 @@ import { getTenantByUserId } from "@/lib/queries/rent-maintenance";
 import { saveUploadedFiles } from "@/lib/utils/upload";
 import {
   maintenanceRequestSchema,
+  landlordMaintenanceSchema,
   updateMaintenanceSchema,
 } from "@/lib/validations/rent-maintenance";
 
@@ -114,4 +115,39 @@ export async function updateMaintenanceStatus(
   revalidatePath("/portal/maintenance");
   revalidatePath("/landlord");
   return { success: "Request updated." };
+}
+
+export async function createMaintenanceAsLandlord(
+  _prev: MaintenanceActionState,
+  formData: FormData
+): Promise<MaintenanceActionState> {
+  await requireLandlord();
+
+  const parsed = landlordMaintenanceSchema.safeParse({
+    propertyId: formData.get("propertyId"),
+    tenantId: formData.get("tenantId") || undefined,
+    title: formData.get("title"),
+    description: formData.get("description"),
+    priority: formData.get("priority"),
+  });
+
+  if (!parsed.success) {
+    return { error: "Please fill in all required fields." };
+  }
+
+  const data = parsed.data;
+
+  await db.insert(maintenanceRequests).values({
+    propertyId: data.propertyId,
+    tenantId: data.tenantId || null,
+    title: data.title.trim(),
+    description: data.description.trim(),
+    priority: data.priority,
+    status: "open",
+  });
+
+  revalidatePath("/landlord/maintenance");
+  revalidatePath("/portal/maintenance");
+  revalidatePath("/landlord");
+  return { success: "Maintenance request created." };
 }

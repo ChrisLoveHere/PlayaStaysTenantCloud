@@ -16,6 +16,7 @@ export const propertyFormSchema = z.object({
   description: z.string().optional(),
   keycodes: z.string().optional(),
   amenities: z.string().optional(),
+  commissionRate: z.string().optional(),
 });
 
 export type PropertyFormValues = z.infer<typeof propertyFormSchema>;

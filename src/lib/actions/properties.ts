@@ -39,6 +39,7 @@ function parseFormData(formData: FormData) {
     description: formData.get("description") || undefined,
     keycodes: formData.get("keycodes") || undefined,
     amenities: formData.get("amenities") || undefined,
+    commissionRate: formData.get("commissionRate") || undefined,
   });
 }
 
@@ -57,6 +58,9 @@ export async function createProperty(
   }
 
   const data = parsed.data;
+  const commissionRate = data.commissionRate?.trim()
+    ? parseInt(data.commissionRate, 10)
+    : null;
 
   try {
     await db.insert(properties).values({
@@ -74,6 +78,7 @@ export async function createProperty(
       description: data.description?.trim() || null,
       keycodes: data.keycodes?.trim() || null,
       amenities: data.amenities?.trim() || null,
+      commissionRate: commissionRate && !Number.isNaN(commissionRate) ? commissionRate : null,
     });
   } catch {
     return { error: "Property ID already exists or save failed." };
@@ -100,6 +105,9 @@ export async function updateProperty(
   }
 
   const data = parsed.data;
+  const commissionRate = data.commissionRate?.trim()
+    ? parseInt(data.commissionRate, 10)
+    : null;
 
   try {
     await db
@@ -119,6 +127,7 @@ export async function updateProperty(
         description: data.description?.trim() || null,
         keycodes: data.keycodes?.trim() || null,
         amenities: data.amenities?.trim() || null,
+        commissionRate: commissionRate && !Number.isNaN(commissionRate) ? commissionRate : null,
         updatedAt: new Date(),
       })
       .where(eq(properties.id, id));

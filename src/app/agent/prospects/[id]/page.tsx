@@ -61,11 +61,49 @@ export default async function AgentApplicationDetailPage({ params }: PageProps) 
               <Row label="Email" value={app.prospectEmail} />
               <Row label="Phone" value={app.prospectPhone ?? "—"} />
               <Row
+                label="Current address"
+                value={app.currentAddress ?? "—"}
+              />
+              <Row
+                label="People moving in"
+                value={app.occupants != null ? String(app.occupants) : "—"}
+              />
+              <Row label="Pets" value={app.pets?.trim() || "None"} />
+              <Row
                 label="Stage"
                 value={applicationStageLabel(app.stage)}
               />
               {app.income != null && (
                 <Row label="Income" value={`${formatMXN(app.income)}/mo`} />
+              )}
+              {app.employment && (() => {
+                const employment = JSON.parse(app.employment) as {
+                  employer?: string;
+                  position?: string;
+                  yearsEmployed?: number;
+                };
+                return (
+                  <>
+                    <Row label="Employer" value={employment.employer ?? "—"} />
+                    <Row label="Position" value={employment.position ?? "—"} />
+                    <Row
+                      label="Years employed"
+                      value={String(employment.yearsEmployed ?? "—")}
+                    />
+                  </>
+                );
+              })()}
+              {app.previousRentals && (
+                <div>
+                  <p className="text-muted-foreground">Previous rentals</p>
+                  <p className="mt-1 whitespace-pre-wrap">{app.previousRentals}</p>
+                </div>
+              )}
+              {app.references && (
+                <div>
+                  <p className="text-muted-foreground">References</p>
+                  <p className="mt-1 whitespace-pre-wrap">{app.references}</p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -88,6 +126,9 @@ export default async function AgentApplicationDetailPage({ params }: PageProps) 
                 })}
               />
               <Row label="Rent" value={`${formatMXN(app.monthlyRent)}/mo`} />
+              {app.commissionRate != null && (
+                <Row label="Your commission" value={`${app.commissionRate}%`} />
+              )}
             </CardContent>
           </Card>
         </div>

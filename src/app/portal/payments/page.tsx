@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { RentPaymentsTable } from "@/components/rent/rent-payments-table";
 import { ReportPaymentSection } from "@/components/rent/report-payment-section";
+import { PaymentClaimsList } from "@/components/rent/payment-claims-list";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tenantNav } from "@/lib/pages/placeholder";
@@ -65,13 +66,23 @@ export default async function PaymentsPage() {
   const payments = await getRentPaymentsForTenant(tenant.id);
   const claims = await getClaimsForTenant(tenant.id);
   const claimsByPaymentId = new Map(
-    claims.map((c) => [c.rentPaymentId, { rentPaymentId: c.rentPaymentId, status: c.status }])
+    claims.map((c) => [
+      c.rentPaymentId,
+      {
+        rentPaymentId: c.rentPaymentId,
+        status: c.status,
+        reference: c.reference,
+        submittedAt: c.submittedAt,
+        landlordNotes: c.landlordNotes,
+      },
+    ])
   );
-  const pendingClaimByPayment = new Map(
-    claims
-      .filter((c) => c.status === "pending_review")
-      .map((c) => [c.rentPaymentId, c.status])
-  );
+  const latestClaimByPayment = new Map<string, string>();
+  for (const c of claims) {
+    if (!latestClaimByPayment.has(c.rentPaymentId)) {
+      latestClaimByPayment.set(c.rentPaymentId, c.status);
+    }
+  }
   const unpaidPayments = payments.filter((p) =>
     ["pending", "overdue", "partial"].includes(p.status)
   );
@@ -133,6 +144,8 @@ export default async function PaymentsPage() {
           claimsByPaymentId={claimsByPaymentId}
         />
 
+        <PaymentClaimsList claims={claims.slice(0, 10)} />
+
         <div>
           <h2 className="mb-4 text-lg font-semibold">Payment history</h2>
           <RentPaymentsTable
@@ -141,8 +154,9 @@ export default async function PaymentsPage() {
               tenantName: null,
               propertyCode: tenant.propertyCode,
               location: tenant.location,
-              claimStatus: pendingClaimByPayment.get(p.id) ?? null,
+              claimStatus: latestClaimByPayment.get(p.id) ?? null,
             }))}
+            showClaimStatus
           />
         </div>
       </div>

@@ -53,6 +53,7 @@ export const landlordNav: NavItem[] = [
 
 export const agentNav: NavItem[] = [
   { href: "/agent", label: "Overview" },
+  { href: "/agent/properties", label: "Listings" },
   { href: "/agent/showings", label: "My Showings" },
   { href: "/agent/prospects", label: "My Prospects" },
   { href: "/agent/tenants", label: "My Tenants" },

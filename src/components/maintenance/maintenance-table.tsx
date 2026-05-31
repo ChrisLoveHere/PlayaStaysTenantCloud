@@ -92,10 +92,12 @@ export function MaintenanceTable({
   items,
   showTenant = false,
   editable = false,
+  tenantView = false,
 }: {
   items: MaintenanceRow[];
   showTenant?: boolean;
   editable?: boolean;
+  tenantView?: boolean;
 }) {
   if (items.length === 0) {
     return (
@@ -111,7 +113,13 @@ export function MaintenanceTable({
 
   return (
     <div className="space-y-4">
-      {openCount > 0 && (
+      {tenantView && openCount > 0 && (
+        <p className="rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2 text-sm">
+          You have <strong>{openCount}</strong> open maintenance request
+          {openCount === 1 ? "" : "s"}. Your landlord will update the status here.
+        </p>
+      )}
+      {!tenantView && openCount > 0 && (
         <p className="text-sm text-muted-foreground">
           Open requests: <strong>{openCount}</strong>
         </p>
@@ -143,7 +151,9 @@ export function MaintenanceTable({
                 </TableCell>
                 {showTenant && (
                   <TableCell>
-                    {r.tenantName}
+                    {r.tenantName ?? (
+                      <span className="text-muted-foreground italic">Landlord / vacant</span>
+                    )}
                     {r.propertyCode && (
                       <span className="block font-mono text-xs text-muted-foreground">
                         {r.propertyCode}

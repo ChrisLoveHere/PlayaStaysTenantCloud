@@ -9,6 +9,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { auth } from "@/auth";
+import { MonthlySummaryCard } from "@/components/dashboard/monthly-summary-card";
 import { LocationFilterTabs } from "@/components/dashboard/location-filter-tabs";
 import { CityBreakdownTable } from "@/components/dashboard/city-breakdown-table";
 import {
@@ -110,6 +111,32 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
           icon={Banknote}
         />
         <StatCard
+          title="Rent due (month)"
+          value={formatMXN(stats.rentDueMonth)}
+          icon={Banknote}
+        />
+        <StatCard
+          title="Outstanding (month)"
+          value={formatMXN(stats.rentOutstandingMonth)}
+          icon={AlertTriangle}
+        />
+        <StatCard
+          title="Collection rate"
+          value={`${stats.collectionRate}%`}
+          icon={Percent}
+        />
+        <StatCard
+          title="Vacancy rate"
+          value={`${stats.vacancyRate}%`}
+          icon={Percent}
+        />
+        <StatCard
+          title="Commissions owed"
+          value={formatMXN(stats.commissionsPendingTotal)}
+          icon={Banknote}
+          hint="Pending agent payouts"
+        />
+        <StatCard
           title="Available units"
           value={String(stats.available)}
           icon={Building2}
@@ -127,6 +154,17 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
       </div>
 
       <PendingPaymentClaimsCard />
+
+      <div className="mt-6">
+        <MonthlySummaryCard
+          rentDueMonth={stats.rentDueMonth}
+          rentCollectedMonth={stats.rentCollectedMonth}
+          rentOutstandingMonth={stats.rentOutstandingMonth}
+          collectionRate={stats.collectionRate}
+          vacancyRate={stats.vacancyRate}
+          commissionsPendingTotal={stats.commissionsPendingTotal}
+        />
+      </div>
 
       {city === "all" ? (
         <>

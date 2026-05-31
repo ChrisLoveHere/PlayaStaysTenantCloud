@@ -107,6 +107,17 @@ export function PropertyForm({ property }: PropertyFormProps) {
           <Field label="Monthly Rent (MXN)" name="monthlyRent" type="number" required defaultValue={rentDisplay} error={state.fieldErrors?.monthlyRent} />
           <Field label="Security Deposit (MXN)" name="securityDeposit" type="number" required defaultValue={depositDisplay} error={state.fieldErrors?.securityDeposit} />
 
+          <Field
+            label="Agent commission %"
+            name="commissionRate"
+            type="number"
+            defaultValue={property?.commissionRate != null ? String(property.commissionRate) : ""}
+            error={state.fieldErrors?.commissionRate}
+          />
+          <div className="sm:col-span-2 text-xs text-muted-foreground">
+            Optional listing commission override. Visible to you and agents only — not shown to tenants or prospects.
+          </div>
+
           <div className="sm:col-span-2 space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea id="description" name="description" rows={3} defaultValue={property?.description ?? ""} />

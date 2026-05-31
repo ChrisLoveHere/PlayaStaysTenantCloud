@@ -41,6 +41,7 @@ export function PropertiesTable({ items }: { items: Property[] }) {
             <TableHead>Address</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Rent/mo</TableHead>
+            <TableHead className="text-right">Commission</TableHead>
             <TableHead />
           </TableRow>
         </TableHeader>
@@ -58,6 +59,9 @@ export function PropertiesTable({ items }: { items: Property[] }) {
                 </Badge>
               </TableCell>
               <TableCell className="text-right">{formatMXN(p.monthlyRent)}</TableCell>
+              <TableCell className="text-right text-sm text-muted-foreground">
+                {p.commissionRate != null ? `${p.commissionRate}%` : "—"}
+              </TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="sm" asChild>
                   <Link href={`/landlord/properties/${p.id}`}>Edit</Link>

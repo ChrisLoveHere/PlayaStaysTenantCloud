@@ -66,6 +66,15 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
               <Row label="Email" value={app.prospectEmail} />
               <Row label="Phone" value={app.prospectPhone ?? "—"} />
               <Row
+                label="Current address"
+                value={app.currentAddress ?? "—"}
+              />
+              <Row
+                label="People moving in"
+                value={app.occupants != null ? String(app.occupants) : "—"}
+              />
+              <Row label="Pets" value={app.pets?.trim() || "None"} />
+              <Row
                 label="Income"
                 value={app.income ? formatMXN(app.income) + "/mo" : "—"}
               />
@@ -116,6 +125,9 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
                 label="Deposit"
                 value={formatMXN(app.securityDeposit)}
               />
+              {app.commissionRate != null && (
+                <Row label="Listing commission" value={`${app.commissionRate}%`} />
+              )}
             </CardContent>
           </Card>
         </div>

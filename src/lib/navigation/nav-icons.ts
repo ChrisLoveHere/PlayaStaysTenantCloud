@@ -26,6 +26,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "/landlord/commissions": Banknote,
   "/landlord/settings": Settings,
   "/agent": LayoutDashboard,
+  "/agent/properties": Building2,
   "/agent/showings": CalendarDays,
   "/agent/prospects": ClipboardList,
   "/agent/tenants": Users,

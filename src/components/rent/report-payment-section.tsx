@@ -26,6 +26,9 @@ type UnpaidCharge = {
 type ClaimInfo = {
   rentPaymentId: string;
   status: string;
+  reference?: string;
+  submittedAt?: Date;
+  landlordNotes?: string | null;
 };
 
 function ReportPaymentForm({
@@ -134,6 +137,26 @@ export function ReportPaymentSection({
                     <Badge variant="secondary" className="mt-1">
                       {rentClaimStatusLabel(claim.status)}
                     </Badge>
+                  )}
+                  {claim?.status === "pending_review" && claim.submittedAt && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Submitted {new Date(claim.submittedAt).toLocaleString("en-US")}
+                      {claim.reference && (
+                        <> · ref <span className="font-mono">{claim.reference}</span></>
+                      )}
+                    </p>
+                  )}
+                  {claim?.status === "rejected" && (
+                    <div className="mt-2 space-y-1">
+                      {claim.landlordNotes && (
+                        <p className="rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
+                          {claim.landlordNotes}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        You can report again with the correct details.
+                      </p>
+                    </div>
                   )}
                 </div>
                 {!pending && (

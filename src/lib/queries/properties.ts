@@ -54,6 +54,24 @@ export async function getPhotosGroupedByProperty(
   return map;
 }
 
+export async function getPropertiesForAgent() {
+  return db
+    .select({
+      id: properties.id,
+      propertyCode: properties.propertyCode,
+      location: properties.location,
+      calle: properties.calle,
+      colonia: properties.colonia,
+      ciudad: properties.ciudad,
+      status: properties.status,
+      monthlyRent: properties.monthlyRent,
+      commissionRate: properties.commissionRate,
+    })
+    .from(properties)
+    .where(eq(properties.status, "available"))
+    .orderBy(properties.location, properties.propertyCode);
+}
+
 export async function getAvailablePropertyById(id: string) {
   const [property] = await db
     .select({

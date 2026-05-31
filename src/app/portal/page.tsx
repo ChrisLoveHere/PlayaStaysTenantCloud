@@ -1,20 +1,16 @@
 import { auth } from "@/auth";
+import { TenantHomeSummary } from "@/components/portal/tenant-home-summary";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { tenantNav } from "@/lib/pages/placeholder";
+import { getTenantDashboardSummary } from "@/lib/queries/tenant-dashboard";
 
 const prospectNav = [
   { href: "/portal", label: "Home" },
   { href: "/portal/application", label: "My Application" },
   { href: "/portal/properties", label: "Properties" },
-];
-
-const tenantNav = [
-  { href: "/portal", label: "Home" },
-  { href: "/portal/lease", label: "Lease & Docs" },
-  { href: "/portal/payments", label: "Rent Payments" },
-  { href: "/portal/maintenance", label: "Maintenance" },
 ];
 
 export default async function PortalPage() {
@@ -23,6 +19,11 @@ export default async function PortalPage() {
   const isTenant = role === "tenant";
   const navItems = isTenant ? tenantNav : prospectNav;
 
+  const summary =
+    isTenant && session?.user?.id
+      ? await getTenantDashboardSummary(session.user.id)
+      : null;
+
   return (
     <DashboardShell
       title={isTenant ? "Tenant Portal" : "Prospect Portal"}
@@ -30,16 +31,12 @@ export default async function PortalPage() {
       navItems={navItems}
       userName={session?.user?.name}
     >
-      {isTenant ? (
+      {isTenant && summary ? (
+        <TenantHomeSummary {...summary} />
+      ) : isTenant ? (
         <Card>
-          <CardHeader>
-            <CardTitle>Tenant dashboard</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>View your lease, submit maintenance requests, and track rent payments.</p>
-            <Button asChild>
-              <Link href="/portal/maintenance">Submit maintenance request</Link>
-            </Button>
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            No tenancy on file. Contact your landlord if you believe this is an error.
           </CardContent>
         </Card>
       ) : (

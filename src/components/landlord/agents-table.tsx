@@ -1,6 +1,8 @@
 "use client";
 
-import { approveAgent, rejectAgent } from "@/lib/actions/agents";
+import Link from "next/link";
+import { useTransition } from "react";
+import { approveAgent, deactivateAgent, rejectAgent } from "@/lib/actions/agents";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useTransition } from "react";
 
 type AgentRow = {
   id: string;
@@ -20,6 +21,8 @@ type AgentRow = {
   email: string;
   phone: string | null;
   bio: string | null;
+  commissionType: string;
+  commissionRate: number;
   createdAt: Date;
 };
 
@@ -33,6 +36,11 @@ export function AgentsTable({ agents }: { agents: AgentRow[] }) {
   function handleReject(id: string) {
     if (!confirm("Reject and delete this agent account?")) return;
     startTransition(() => rejectAgent(id));
+  }
+
+  function handleDeactivate(id: string) {
+    if (!confirm("Deactivate this agent? They will lose portal access.")) return;
+    startTransition(() => deactivateAgent(id));
   }
 
   const pendingAgents = agents.filter((a) => !a.isActive);
@@ -62,7 +70,12 @@ export function AgentsTable({ agents }: { agents: AgentRow[] }) {
         {activeAgents.length === 0 ? (
           <p className="text-sm text-muted-foreground">No active agents yet.</p>
         ) : (
-          <AgentTable agents={activeAgents} pending={pending} />
+          <AgentTable
+            agents={activeAgents}
+            pending={pending}
+            onDeactivate={handleDeactivate}
+            showManage
+          />
         )}
       </div>
     </div>
@@ -74,13 +87,17 @@ function AgentTable({
   pending,
   onApprove,
   onReject,
+  onDeactivate,
   showActions,
+  showManage,
 }: {
   agents: AgentRow[];
   pending: boolean;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
+  onDeactivate?: (id: string) => void;
   showActions?: boolean;
+  showManage?: boolean;
 }) {
   return (
     <div className="rounded-md border">
@@ -89,41 +106,67 @@ function AgentTable({
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
+            <TableHead>Commission</TableHead>
             <TableHead>Status</TableHead>
-            {showActions && <TableHead className="text-right">Actions</TableHead>}
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {agents.map((agent) => (
             <TableRow key={agent.id}>
-              <TableCell className="font-medium">{agent.name}</TableCell>
+              <TableCell>
+                <Link
+                  href={`/landlord/agents/${agent.id}`}
+                  className="font-medium hover:text-primary hover:underline"
+                >
+                  {agent.name}
+                </Link>
+              </TableCell>
               <TableCell>{agent.email}</TableCell>
-              <TableCell>{agent.phone ?? "—"}</TableCell>
+              <TableCell className="text-sm">
+                {agent.commissionType === "percent"
+                  ? `${agent.commissionRate}%`
+                  : `$${(agent.commissionRate / 100).toFixed(0)} flat`}
+              </TableCell>
               <TableCell>
                 <Badge variant={agent.isActive ? "default" : "secondary"}>
                   {agent.isActive ? "Active" : "Pending"}
                 </Badge>
               </TableCell>
-              {showActions && onApprove && onReject && (
-                <TableCell className="space-x-2 text-right">
-                  <Button
-                    size="sm"
-                    disabled={pending}
-                    onClick={() => onApprove(agent.id)}
-                  >
-                    Approve
-                  </Button>
+              <TableCell className="space-x-2 text-right">
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/landlord/agents/${agent.id}`}>Manage</Link>
+                </Button>
+                {showActions && onApprove && onReject && (
+                  <>
+                    <Button
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => onApprove(agent.id)}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={pending}
+                      onClick={() => onReject(agent.id)}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                )}
+                {showManage && onDeactivate && (
                   <Button
                     size="sm"
                     variant="outline"
                     disabled={pending}
-                    onClick={() => onReject(agent.id)}
+                    onClick={() => onDeactivate(agent.id)}
                   >
-                    Reject
+                    Deactivate
                   </Button>
-                </TableCell>
-              )}
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

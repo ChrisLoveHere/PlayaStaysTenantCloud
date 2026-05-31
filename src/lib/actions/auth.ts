@@ -19,14 +19,24 @@ export async function registerUser(
   formData: FormData
 ): Promise<RegisterState> {
   const name = (formData.get("name") as string)?.trim();
+  const firstName = (formData.get("firstName") as string)?.trim();
+  const lastName = (formData.get("lastName") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
   const role = (formData.get("role") as UserRole) ?? "prospect";
   const phone = (formData.get("phone") as string)?.trim();
   const bio = (formData.get("bio") as string)?.trim();
 
-  if (!name || !email || !password) {
-    return { error: "All fields are required." };
+  const displayName =
+    firstName && lastName
+      ? `${firstName} ${lastName}`
+      : name;
+
+  if ((!displayName && !firstName) || !email || !password) {
+    return { error: "All required fields must be filled in." };
+  }
+  if (role === "prospect" && !phone) {
+    return { error: "Phone number is required." };
   }
   if (password.length < 8) {
     return { error: "Password must be at least 8 characters." };
@@ -46,11 +56,25 @@ export async function registerUser(
 
   const [user] = await db
     .insert(users)
-    .values({ name, email, passwordHash, role, phone })
+    .values({
+      name: displayName,
+      email,
+      passwordHash,
+      role,
+      phone: phone || null,
+    })
     .returning({ id: users.id, role: users.role });
 
   if (role === "prospect" && user) {
-    await db.insert(prospects).values({ userId: user.id });
+    await db.insert(prospects).values({
+      userId: user.id,
+      firstName: firstName || displayName?.split(/\s+/)[0] || null,
+      lastName:
+        lastName ||
+        (displayName?.includes(" ")
+          ? displayName.split(/\s+/).slice(1).join(" ")
+          : null),
+    });
     redirect("/login?registered=1");
   }
 

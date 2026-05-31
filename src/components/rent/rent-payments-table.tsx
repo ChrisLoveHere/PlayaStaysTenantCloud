@@ -126,9 +126,11 @@ function UpdatePaymentForm({
 export function RentPaymentsTable({
   items,
   editable = false,
+  showClaimStatus = false,
 }: {
   items: RentRow[];
   editable?: boolean;
+  showClaimStatus?: boolean;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -197,8 +199,17 @@ export function RentPaymentsTable({
                     >
                       {rentPaymentStatusLabel(p.status)}
                     </Badge>
-                    {p.claimStatus === "pending_review" && (
-                      <Badge variant="outline" className="ml-1">
+                    {p.claimStatus && (showClaimStatus || p.claimStatus === "pending_review") && (
+                      <Badge
+                        variant={
+                          p.claimStatus === "rejected"
+                            ? "destructive"
+                            : p.claimStatus === "approved"
+                              ? "default"
+                              : "outline"
+                        }
+                        className="ml-1"
+                      >
                         {rentClaimStatusLabel(p.claimStatus)}
                       </Badge>
                     )}
