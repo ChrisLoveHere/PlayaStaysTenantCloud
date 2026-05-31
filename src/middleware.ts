@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 import { getDashboardPath } from "@/lib/auth/roles";
 import type { UserRole } from "@/lib/db/schema";
 import { NextResponse } from "next/server";
@@ -14,7 +15,7 @@ function isPublicPath(pathname: string) {
   );
 }
 
-export default auth((req) => {
+export default NextAuth(authConfig).auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const pathname = nextUrl.pathname;
