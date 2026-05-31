@@ -1,12 +1,21 @@
-import { PlaceholderPage, landlordNav } from "@/lib/pages/placeholder";
+import { auth } from "@/auth";
+import { TenantsTable } from "@/components/tenants/tenants-table";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { landlordNav } from "@/lib/pages/placeholder";
+import { getTenantsForLandlord } from "@/lib/queries/leases";
 
-export default function TenantsPage() {
+export default async function TenantsPage() {
+  const session = await auth();
+  const tenants = await getTenantsForLandlord();
+
   return (
-    <PlaceholderPage
-      title="Tenants"
-      portalTitle="Landlord"
+    <DashboardShell
+      title="PlayaStays"
+      subtitle="Tenants"
       navItems={landlordNav}
-      description="View active and past tenants with lease and move-in details. Coming in Phase 5."
-    />
+      userName={session?.user?.name}
+    >
+      <TenantsTable items={tenants} />
+    </DashboardShell>
   );
 }

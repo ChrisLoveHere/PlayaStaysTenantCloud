@@ -60,3 +60,22 @@ export function showingStatusLabel(status: string): string {
   };
   return labels[status] ?? status;
 }
+
+export function leaseStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    draft: "Draft",
+    sent: "Sent",
+    signed: "Signed",
+    expired: "Expired",
+    terminated: "Terminated",
+  };
+  return labels[status] ?? status;
+}
+
+export function commissionStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending: "Pending",
+    paid: "Paid",
+  };
+  return labels[status] ?? status;
+}
