@@ -50,23 +50,17 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md border-border/60 shadow-lg ring-1 ring-border/40">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">PlayaStays</CardTitle>
-        <CardDescription>Sign in to your account</CardDescription>
+        <CardTitle className="text-2xl font-semibold">Welcome back</CardTitle>
+        <CardDescription>Sign in to your PlayaStays account</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {registered && (
-            <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-              Account created. Please sign in.
-            </p>
+            <p className="alert-success">Account created. Please sign in.</p>
           )}
-          {error && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
+          {error && <p className="alert-error">{error}</p>}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -76,6 +70,7 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              className="h-10"
             />
           </div>
           <div className="space-y-2">
@@ -87,16 +82,20 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
+              className="h-10"
             />
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="h-10 w-full" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             No account?{" "}
-            <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/register"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
               Register
             </Link>
           </p>

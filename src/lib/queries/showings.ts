@@ -187,10 +187,10 @@ export type CalendarEvent = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  scheduled: "#3b82f6",
-  completed: "#22c55e",
-  cancelled: "#94a3b8",
-  no_show: "#ef4444",
+  scheduled: "#0d9488",
+  completed: "#059669",
+  cancelled: "#64748b",
+  no_show: "#e11d48",
 };
 
 export function showingsToCalendarEvents(
@@ -233,8 +233,8 @@ export function blocksToCalendarEvents(
     title: b.reason ? `Unavailable: ${b.reason}` : "Unavailable",
     start: new Date(b.startAt).toISOString(),
     end: new Date(b.endAt).toISOString(),
-    backgroundColor: "#64748b",
-    borderColor: "#475569",
+    backgroundColor: "#475569",
+    borderColor: "#334155",
     extendedProps: { type: "block", blockId: b.id },
   }));
 }

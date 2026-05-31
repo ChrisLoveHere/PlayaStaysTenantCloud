@@ -15,7 +15,7 @@ export function UpcomingRenewalsCard({ items }: { items: RenewalRow[] }) {
   if (items.length === 0) return null;
 
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 shadow-sm ring-1 ring-border/60">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base">Leases expiring soon</CardTitle>
         <Button asChild variant="outline" size="sm">

@@ -5,6 +5,7 @@ import { ShowingOutcomeForm } from "@/components/showings/showing-outcome-form";
 import { ShowingsCalendar } from "@/components/showings/showings-calendar";
 import { ShowingsTable } from "@/components/showings/showings-table";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { SectionHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { agentNav } from "@/lib/pages/placeholder";
 import {
@@ -30,17 +31,21 @@ export default async function AgentShowingsPage() {
 
   return (
     <DashboardShell
-      title="PlayaStays"
-      subtitle="My Showings"
+      title="Agent"
+      subtitle="My showings"
+      description="Your calendar, upcoming tours, and showing history."
       navItems={agentNav}
       userName={session.user.name}
     >
       <div className="space-y-8">
-        <ShowingsCalendar events={events} height="500px" />
+        <ShowingsCalendar events={events} height="560px" title="My schedule" />
 
         {upcoming.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Upcoming — mark outcome</h2>
+            <SectionHeader
+              title="Upcoming — mark outcome"
+              description="Record results after each scheduled showing."
+            />
             {upcoming.map((s) => (
               <div key={s.id} className="grid gap-4 lg:grid-cols-2">
                 <Card>
@@ -74,7 +79,7 @@ export default async function AgentShowingsPage() {
         )}
 
         <div>
-          <h2 className="mb-3 text-lg font-semibold">History</h2>
+          <SectionHeader title="History" />
           <ShowingsTable items={showings} />
         </div>
       </div>

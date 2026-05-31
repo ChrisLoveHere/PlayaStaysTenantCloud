@@ -3,6 +3,7 @@ import { ScheduleShowingForm } from "@/components/showings/schedule-showing-form
 import { ShowingsCalendar } from "@/components/showings/showings-calendar";
 import { ShowingsTable } from "@/components/showings/showings-table";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { SectionHeader } from "@/components/layout/page-header";
 import { landlordNav } from "@/lib/pages/placeholder";
 import {
   getAllShowingsCalendarEvents,
@@ -20,8 +21,9 @@ export default async function LandlordShowingsPage() {
 
   return (
     <DashboardShell
-      title="PlayaStays"
+      title="Landlord"
       subtitle="Showings"
+      description="Schedule property tours and track outcomes on the calendar."
       navItems={landlordNav}
       userName={session?.user?.name}
     >
@@ -32,13 +34,13 @@ export default async function LandlordShowingsPage() {
           agents={formOptions.agents}
         />
 
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">Calendar</h2>
-          <ShowingsCalendar events={events} />
-        </div>
+        <ShowingsCalendar events={events} />
 
         <div>
-          <h2 className="mb-3 text-lg font-semibold">All showings</h2>
+          <SectionHeader
+            title="All showings"
+            description="Complete list with status and agent assignments."
+          />
           <ShowingsTable items={showings} />
         </div>
       </div>

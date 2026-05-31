@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { getAgentProfileByUserId } from "@/lib/auth/agent";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Banknote, CalendarDays, ClipboardList } from "lucide-react";
 import { getAgentDashboardStats } from "@/lib/queries/reminders";
 import { formatMXN } from "@/lib/utils/format";
 
@@ -26,44 +27,28 @@ export default async function AgentDashboardPage() {
 
   return (
     <DashboardShell
-      title="Leasing Agent"
-      subtitle="Agent Dashboard"
+      title="Agent"
+      subtitle="Dashboard"
+      description="Your showings, prospects, and commission snapshot."
       navItems={navItems}
       userName={session?.user?.name}
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Upcoming Showings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{stats.upcomingShowings}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Prospects
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{stats.activeProspects}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending Commission
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {formatMXN(stats.pendingCommission)}
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Upcoming showings"
+          value={String(stats.upcomingShowings)}
+          icon={CalendarDays}
+        />
+        <StatCard
+          title="Active prospects"
+          value={String(stats.activeProspects)}
+          icon={ClipboardList}
+        />
+        <StatCard
+          title="Pending commission"
+          value={formatMXN(stats.pendingCommission)}
+          icon={Banknote}
+        />
       </div>
     </DashboardShell>
   );

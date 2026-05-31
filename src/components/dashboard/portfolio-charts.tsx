@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -18,11 +19,35 @@ import { formatMXN } from "@/lib/utils/format";
 import { propertyStatusLabel } from "@/lib/utils/format";
 
 const STATUS_COLORS: Record<string, string> = {
-  available: "#22c55e",
-  occupied: "#3b82f6",
-  maintenance: "#f59e0b",
-  off_market: "#94a3b8",
+  available: "#059669",
+  occupied: "#0d9488",
+  maintenance: "#d97706",
+  off_market: "#64748b",
 };
+
+const CHART = {
+  teal: "#0d9488",
+  tealLight: "#5eead4",
+  indigo: "#0f766e",
+  sand: "#ca8a04",
+};
+
+function ChartCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card className="shadow-sm ring-1 ring-border/60">
+      <CardHeader className="border-b bg-muted/20 pb-4">
+        <CardTitle className="text-base font-semibold">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">{children}</CardContent>
+    </Card>
+  );
+}
 
 type OccupancyChartProps = {
   data: { label: string; occupancy: number; total: number }[];
@@ -34,22 +59,26 @@ export function OccupancyByCityChart({ data }: OccupancyChartProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Occupancy by City</CardTitle>
-      </CardHeader>
-      <CardContent className="h-72">
+    <ChartCard title="Occupancy by city">
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
-            <YAxis unit="%" domain={[0, 100]} tick={{ fontSize: 12 }} />
-            <Tooltip formatter={(v) => [`${v}%`, "Occupancy"]} />
-            <Bar dataKey="occupancy" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} interval={0} angle={-20} textAnchor="end" height={60} />
+            <YAxis unit="%" domain={[0, 100]} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} />
+            <Tooltip
+              formatter={(v) => [`${v}%`, "Occupancy"]}
+              contentStyle={{
+                borderRadius: "0.5rem",
+                border: "1px solid var(--border)",
+                background: "var(--card)",
+              }}
+            />
+            <Bar dataKey="occupancy" fill={CHART.teal} radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+      </div>
+    </ChartCard>
   );
 }
 
@@ -69,24 +98,28 @@ export function RevenueByCityChart({ data }: RevenueChartProps) {
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Revenue by City (MXN)</CardTitle>
-      </CardHeader>
-      <CardContent className="h-72">
+    <ChartCard title="Revenue by city (MXN)">
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" height={60} />
-            <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(v) => formatMXN(Number(v) * 100)} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} interval={0} angle={-20} textAnchor="end" height={60} />
+            <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+            <Tooltip
+              formatter={(v) => formatMXN(Number(v) * 100)}
+              contentStyle={{
+                borderRadius: "0.5rem",
+                border: "1px solid var(--border)",
+                background: "var(--card)",
+              }}
+            />
             <Legend />
-            <Bar dataKey="potential" name="Rent potential" fill="#6366f1" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="collected" name="Collected (month)" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="potential" name="Rent potential" fill={CHART.indigo} radius={[6, 6, 0, 0]} />
+            <Bar dataKey="collected" name="Collected (month)" fill={CHART.tealLight} radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+      </div>
+    </ChartCard>
   );
 }
 
@@ -106,11 +139,8 @@ export function StatusDistributionChart({ data }: StatusChartProps) {
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Property Status</CardTitle>
-      </CardHeader>
-      <CardContent className="h-72">
+    <ChartCard title="Property status">
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -119,33 +149,40 @@ export function StatusDistributionChart({ data }: StatusChartProps) {
               nameKey="name"
               cx="50%"
               cy="50%"
-              outerRadius={90}
+              innerRadius={48}
+              outerRadius={88}
+              paddingAngle={2}
               label={({ name, value }) => `${name}: ${value}`}
             >
               {chartData.map((entry) => (
                 <Cell
                   key={entry.status}
-                  fill={STATUS_COLORS[entry.status] ?? "hsl(var(--muted-foreground))"}
+                  fill={STATUS_COLORS[entry.status] ?? "#94a3b8"}
+                  stroke="var(--card)"
+                  strokeWidth={2}
                 />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip
+              contentStyle={{
+                borderRadius: "0.5rem",
+                border: "1px solid var(--border)",
+                background: "var(--card)",
+              }}
+            />
           </PieChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+      </div>
+    </ChartCard>
   );
 }
 
 function EmptyChart({ title, message }: { title: string; message: string }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex h-72 items-center justify-center text-sm text-muted-foreground">
+    <ChartCard title={title}>
+      <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
         {message}
-      </CardContent>
-    </Card>
+      </div>
+    </ChartCard>
   );
 }

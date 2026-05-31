@@ -1,5 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import {
+  AlertTriangle,
+  Banknote,
+  Building2,
+  Percent,
+  TrendingUp,
+  Wrench,
+} from "lucide-react";
 import { auth } from "@/auth";
 import { LocationFilterTabs } from "@/components/dashboard/location-filter-tabs";
 import { CityBreakdownTable } from "@/components/dashboard/city-breakdown-table";
@@ -8,6 +16,8 @@ import {
   RevenueByCityChart,
   StatusDistributionChart,
 } from "@/components/dashboard/portfolio-charts";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { UpcomingRenewalsCard } from "@/components/dashboard/upcoming-renewals-card";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +30,6 @@ import {
   getStatusDistribution,
 } from "@/lib/queries/portfolio";
 import { getUpcomingLeaseRenewals } from "@/lib/queries/reminders";
-import { UpcomingRenewalsCard } from "@/components/dashboard/upcoming-renewals-card";
 import {
   getLocationLabel,
   parseLocationFilter,
@@ -46,15 +55,21 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
       city === "all" ? getUpcomingLeaseRenewals(60) : Promise.resolve([]),
     ]);
 
-  const subtitle =
+  const pageTitle =
     city === "all"
-      ? "Portfolio Overview — All Locations"
-      : `Portfolio — ${getLocationLabel(city)}`;
+      ? "Portfolio overview"
+      : getLocationLabel(city);
+
+  const pageDescription =
+    city === "all"
+      ? "Unified view across Playa del Carmen, Tulum, Cozumel, and your full portfolio."
+      : "Metrics and status for this location.";
 
   return (
     <DashboardShell
-      title="PlayaStays"
-      subtitle={subtitle}
+      title="Landlord"
+      subtitle={pageTitle}
+      description={pageDescription}
       navItems={landlordNav}
       userName={session?.user?.name}
     >
@@ -62,20 +77,52 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
         <Suspense>
           <LocationFilterTabs active={city} />
         </Suspense>
-        <Button asChild size="sm">
+        <Button asChild size="sm" className="shrink-0">
           <Link href="/landlord/properties/new">+ Add property</Link>
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Properties" value={String(stats.totalProperties)} />
-        <StatCard title="Occupancy" value={`${stats.occupancyRate}%`} />
-        <StatCard title="Rent Potential" value={formatMXN(stats.monthlyRentPotential)} />
-        <StatCard title="Collected (Month)" value={formatMXN(stats.rentCollectedMonth)} />
-        <StatCard title="Collected (YTD)" value={formatMXN(stats.rentCollectedYtd)} />
-        <StatCard title="Available Units" value={String(stats.available)} />
-        <StatCard title="Overdue Rent" value={String(stats.overdueCount)} />
-        <StatCard title="Open Maintenance" value={String(stats.openMaintenance)} />
+        <StatCard
+          title="Properties"
+          value={String(stats.totalProperties)}
+          icon={Building2}
+        />
+        <StatCard
+          title="Occupancy"
+          value={`${stats.occupancyRate}%`}
+          icon={Percent}
+        />
+        <StatCard
+          title="Rent potential"
+          value={formatMXN(stats.monthlyRentPotential)}
+          icon={TrendingUp}
+        />
+        <StatCard
+          title="Collected (month)"
+          value={formatMXN(stats.rentCollectedMonth)}
+          icon={Banknote}
+        />
+        <StatCard
+          title="Collected (YTD)"
+          value={formatMXN(stats.rentCollectedYtd)}
+          icon={Banknote}
+        />
+        <StatCard
+          title="Available units"
+          value={String(stats.available)}
+          icon={Building2}
+        />
+        <StatCard
+          title="Overdue rent"
+          value={String(stats.overdueCount)}
+          icon={AlertTriangle}
+        />
+        <StatCard
+          title="Open maintenance"
+          value={String(stats.openMaintenance)}
+          icon={Wrench}
+        />
       </div>
 
       {city === "all" ? (
@@ -93,15 +140,20 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
       ) : (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <StatusDistributionChart data={statusData} />
-          <Card>
+          <Card className="shadow-sm ring-1 ring-border/60">
             <CardHeader>
-              <CardTitle className="text-base">{getLocationLabel(city)} Summary</CardTitle>
+              <CardTitle className="text-base">
+                {getLocationLabel(city)} summary
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <Row label="Active tenants" value={String(stats.activeTenants)} />
               <Row label="Average rent" value={formatMXN(stats.averageRent)} />
               <Row label="In maintenance" value={String(stats.maintenance)} />
-              <Row label="Rent potential" value={formatMXN(stats.monthlyRentPotential)} />
+              <Row
+                label="Rent potential"
+                value={formatMXN(stats.monthlyRentPotential)}
+              />
             </CardContent>
           </Card>
         </div>
@@ -110,26 +162,11 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
   );
 }
 
-function StatCard({ title, value }: { title: string; value: string }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-bold tracking-tight">{value}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b py-2 last:border-0">
+    <div className="flex justify-between border-b border-border/60 py-2.5 last:border-0">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className="font-medium tabular-nums">{value}</span>
     </div>
   );
 }

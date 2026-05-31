@@ -32,17 +32,17 @@ export function LocationFilterTabs({ active }: { active: LocationFilter }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 rounded-xl border bg-card p-1.5 shadow-sm ring-1 ring-border/60">
       {filters.map((f) => (
         <button
           key={f.value}
           type="button"
           onClick={() => setCity(f.value)}
           className={cn(
-            "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+            "rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
             active === f.value
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
         >
           {f.label}
