@@ -50,3 +50,13 @@ export function propertyStatusLabel(status: string): string {
   };
   return labels[status] ?? status;
 }
+
+export function showingStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    scheduled: "Scheduled",
+    completed: "Completed",
+    cancelled: "Cancelled",
+    no_show: "No Show",
+  };
+  return labels[status] ?? status;
+}
