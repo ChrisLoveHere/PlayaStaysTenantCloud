@@ -19,6 +19,10 @@ export const metadata = {
   title: "PlayaStays · Tenant Application Portal",
   description:
     "Apply for long-term rentals in Quintana Roo, schedule property viewings, and track your application through move-in.",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const STEPS = [
