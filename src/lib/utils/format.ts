@@ -79,3 +79,33 @@ export function commissionStatusLabel(status: string): string {
   };
   return labels[status] ?? status;
 }
+
+export function rentPaymentStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    pending: "Pending",
+    paid: "Paid",
+    overdue: "Overdue",
+    partial: "Partial",
+  };
+  return labels[status] ?? status;
+}
+
+export function maintenanceStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    open: "Open",
+    in_progress: "In Progress",
+    resolved: "Resolved",
+    closed: "Closed",
+  };
+  return labels[status] ?? status;
+}
+
+export function maintenancePriorityLabel(priority: string): string {
+  const labels: Record<string, string> = {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+    urgent: "Urgent",
+  };
+  return labels[priority] ?? priority;
+}
