@@ -87,6 +87,13 @@ export const NOTIFICATION_TYPES = [
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
+export const DOCUMENT_ENTITY_TYPES = [
+  "property",
+  "lease",
+  "application",
+] as const;
+export type DocumentEntityType = (typeof DOCUMENT_ENTITY_TYPES)[number];
+
 export const PLAYA_LOCATIONS = [
   "playa_del_carmen",
   "puerto_morelos",

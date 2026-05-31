@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { ApplicationReviewForm } from "@/components/applications/application-review-form";
+import { DocumentsPanel } from "@/components/documents/documents-panel";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { landlordNav } from "@/lib/pages/placeholder";
 import { getApplicationDetail } from "@/lib/queries/applications";
+import { getDocumentsForEntity } from "@/lib/queries/documents";
 import {
   applicationStageLabel,
   formatMXN,
@@ -24,6 +26,8 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
   const detail = await getApplicationDetail(id);
 
   if (!detail) notFound();
+
+  const applicationDocuments = await getDocumentsForEntity("application", id);
 
   const { application: app, history, agents } = detail;
   const employment = app.employment
@@ -121,6 +125,16 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
             landlordNotes={app.landlordNotes}
             assignedAgentId={app.assignedAgentId}
             agents={agents}
+          />
+
+          <DocumentsPanel
+            entityType="application"
+            entityId={app.id}
+            documents={applicationDocuments}
+            canUpload
+            canDelete
+            title="Application documents"
+            description="Screening files, ID copies, income proof, and references."
           />
 
           <Card>

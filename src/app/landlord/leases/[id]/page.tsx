@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { LeaseManageForms } from "@/components/leases/lease-manage-forms";
+import { DocumentsPanel } from "@/components/documents/documents-panel";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { landlordNav } from "@/lib/pages/placeholder";
 import { getLeaseById } from "@/lib/queries/leases";
+import { getDocumentsForEntity } from "@/lib/queries/documents";
 import { getLocationLabel } from "@/lib/constants/locations";
 import {
   formatMXN,
@@ -24,6 +26,8 @@ export default async function LeaseDetailPage({ params }: PageProps) {
   const lease = await getLeaseById(id);
 
   if (!lease) notFound();
+
+  const leaseDocuments = await getDocumentsForEntity("lease", id);
 
   return (
     <DashboardShell
@@ -65,7 +69,7 @@ export default async function LeaseDetailPage({ params }: PageProps) {
               cp: lease.cp,
             })}
           />
-          {lease.documentUrl && (
+          {lease.documentUrl && leaseDocuments.length === 0 && (
             <div className="sm:col-span-2">
               <a
                 href={lease.documentUrl}
@@ -80,7 +84,18 @@ export default async function LeaseDetailPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
-      <LeaseManageForms leaseId={lease.id} currentStatus={lease.status} />
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+        <DocumentsPanel
+          entityType="lease"
+          entityId={lease.id}
+          documents={leaseDocuments}
+          canUpload
+          canDelete
+          title="Lease documents"
+          description="Upload signed lease PDFs and addenda."
+        />
+        <LeaseManageForms leaseId={lease.id} currentStatus={lease.status} />
+      </div>
     </DashboardShell>
   );
 }

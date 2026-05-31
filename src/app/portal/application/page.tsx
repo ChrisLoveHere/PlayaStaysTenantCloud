@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ApplyToPropertyForm } from "@/components/applications/apply-to-property-form";
+import { ApplicationDocumentsList } from "@/components/documents/application-documents-list";
 import { MyApplicationsList } from "@/components/applications/my-applications-list";
 import { ProspectProfileForm } from "@/components/applications/prospect-profile-form";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -10,6 +11,7 @@ import {
   getAvailableProperties,
   getProspectByUserId,
 } from "@/lib/queries/applications";
+import { getDocumentsForEntity } from "@/lib/queries/documents";
 
 export default async function ApplicationPage() {
   const session = await auth();
@@ -27,6 +29,14 @@ export default async function ApplicationPage() {
 
   const profileComplete = !!prospect.income && !!prospect.employment;
 
+  const applicationDocGroups = await Promise.all(
+    myApplications.map(async (app) => ({
+      applicationId: app.id,
+      propertyCode: app.propertyCode,
+      documents: await getDocumentsForEntity("application", app.id),
+    }))
+  );
+
   return (
     <DashboardShell
       title="PlayaStays"
@@ -40,6 +50,14 @@ export default async function ApplicationPage() {
           properties={availableProperties}
           profileComplete={profileComplete}
         />
+        <div>
+          <h2 className="mb-4 text-lg font-semibold">Screening documents</h2>
+          <ApplicationDocumentsList
+            groups={applicationDocGroups}
+            canUpload
+            canDelete
+          />
+        </div>
         <MyApplicationsList items={myApplications} />
       </div>
     </DashboardShell>

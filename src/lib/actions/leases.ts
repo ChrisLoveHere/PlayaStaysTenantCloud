@@ -18,7 +18,7 @@ import {
 } from "@/lib/db/schema";
 import type { ApplicationStage, LeaseStatus } from "@/lib/db/schema";
 import { parseMXNToCents } from "@/lib/utils/format";
-import { saveUploadedFile } from "@/lib/utils/upload";
+import { insertDocumentRecord } from "@/lib/actions/documents";
 import {
   createLeaseSchema,
   updateLeaseStatusSchema,
@@ -313,19 +313,24 @@ export async function uploadLeaseDocument(
   _prev: LeaseActionState,
   formData: FormData
 ): Promise<LeaseActionState> {
-  await requireLandlord();
+  const session = await requireLandlord();
 
   const file = formData.get("document") as File | null;
   if (!file || file.size === 0) {
     return { error: "Please select a file." };
   }
 
+  const { saveUploadedFile } = await import("@/lib/utils/upload");
   const url = await saveUploadedFile(file, "leases");
 
-  await db
-    .update(leases)
-    .set({ documentUrl: url, updatedAt: new Date() })
-    .where(eq(leases.id, leaseId));
+  await insertDocumentRecord({
+    entityType: "lease",
+    entityId: leaseId,
+    name: file.name || "Lease document",
+    url,
+    mimeType: file.type || null,
+    uploadedById: session.user.id,
+  });
 
   revalidatePath(`/landlord/leases/${leaseId}`);
   revalidatePath("/portal/lease");

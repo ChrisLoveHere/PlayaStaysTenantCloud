@@ -2,10 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { DocumentsPanel } from "@/components/documents/documents-panel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tenantNav } from "@/lib/pages/placeholder";
 import { getTenantLeaseForUser } from "@/lib/queries/leases";
+import { getDocumentsForEntity } from "@/lib/queries/documents";
 import { getLocationLabel } from "@/lib/constants/locations";
 import {
   formatMXN,
@@ -64,6 +66,7 @@ export default async function LeasePage() {
   }
 
   const { lease } = data;
+  const leaseDocuments = await getDocumentsForEntity("lease", lease.id);
   const keycodes = lease.keycodes
     ? (() => {
         try {
@@ -123,7 +126,7 @@ export default async function LeasePage() {
                 </div>
               )}
             </div>
-            {lease.documentUrl && (
+            {lease.documentUrl && leaseDocuments.length === 0 && (
               <a
                 href={lease.documentUrl}
                 target="_blank"
@@ -135,6 +138,14 @@ export default async function LeasePage() {
             )}
           </CardContent>
         </Card>
+
+        <DocumentsPanel
+          entityType="lease"
+          entityId={lease.id}
+          documents={leaseDocuments}
+          title="Lease documents"
+          description="Signed lease and related files from your landlord."
+        />
 
         {keycodes && (
           <Card>
