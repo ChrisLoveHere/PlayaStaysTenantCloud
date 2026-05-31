@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { BulkRentForm } from "@/components/rent/bulk-rent-form";
+import { ExportCsvButton } from "@/components/export/export-csv-button";
 import { CreateRentPaymentForm } from "@/components/rent/create-rent-payment-form";
 import { PendingPaymentClaims } from "@/components/rent/pending-payment-claims";
 import { ReferenceMatcher } from "@/components/rent/reference-matcher";
@@ -54,6 +55,10 @@ export default async function RentPage({ searchParams }: PageProps) {
       userName={session?.user?.name}
     >
       <div className="space-y-8">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Rent management</h2>
+          <ExportCsvButton href="/api/export/rent" label="Export CSV" />
+        </div>
         <PendingPaymentClaims items={pendingClaims} />
         <ReferenceMatcher />
         <BulkRentForm />

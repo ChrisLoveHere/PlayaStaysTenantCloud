@@ -1,141 +1,166 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import {
+  ArrowRight,
+  Calendar,
+  ClipboardList,
+  FileSignature,
+  Home,
+  Palmtree,
+  UserPlus,
+} from "lucide-react";
 import { auth } from "@/auth";
+import { LoginForm } from "@/components/auth/login-form";
 import { getDashboardPath } from "@/lib/auth/roles";
 import { Button } from "@/components/ui/button";
-import { Palmtree, MapPin, Shield, Users } from "lucide-react";
 
-const LOCATIONS = [
-  "Playa del Carmen",
-  "Tulum",
-  "Cozumel",
-  "Puerto Morelos",
-  "Isla Mujeres",
-  "Xpu-Ha",
-];
+export const metadata = {
+  title: "PlayaStays · Tenant Application Portal",
+  description:
+    "Apply for long-term rentals in Quintana Roo, schedule property viewings, and track your application through move-in.",
+};
+
+const STEPS = [
+  {
+    icon: UserPlus,
+    title: "Create account",
+    text: "Register with your name, email, and phone.",
+  },
+  {
+    icon: ClipboardList,
+    title: "Submit application",
+    text: "Complete your rental profile and upload screening documents.",
+  },
+  {
+    icon: Calendar,
+    title: "Schedule viewings",
+    text: "Request showings for properties you want to see.",
+  },
+  {
+    icon: FileSignature,
+    title: "Sign lease",
+    text: "Review and sign your lease when approved.",
+  },
+  {
+    icon: Home,
+    title: "Move in",
+    text: "Get move-in details and manage rent in your portal.",
+  },
+] as const;
 
 export default async function HomePage() {
   const session = await auth();
+  if (session?.user) {
+    redirect(getDashboardPath(session.user.role));
+  }
 
   return (
-    <div className="flex min-h-screen flex-col app-shell-bg">
-      <header className="border-b border-border/60 bg-background/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl brand-gradient shadow-sm">
-              <Palmtree className="h-5 w-5 text-white" />
+    <div className="flex min-h-screen min-h-[100dvh] flex-col app-shell-bg">
+      <header className="shrink-0 border-b border-border/60 bg-background/80 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg brand-gradient shadow-sm">
+              <Palmtree className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-semibold tracking-tight">
+            <span className="text-sm font-semibold tracking-tight sm:text-base">
               PlayaStays
             </span>
           </div>
-          <div className="flex gap-2">
-            {session ? (
-              <Button asChild>
-                <Link href={getDashboardPath(session.user.role)}>
-                  Go to dashboard
-                </Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link href="/login">Sign in</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/register">Apply now</Link>
-                </Button>
-              </>
-            )}
-          </div>
+          <Button size="sm" asChild>
+            <Link href="/register">
+              Create account
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Link>
+          </Button>
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-16 md:py-24">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <MapPin className="h-3.5 w-3.5" />
-              Quintana Roo, Mexico
-            </p>
-            <h1 className="max-w-xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Property management built for the Riviera Maya
-            </h1>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              One hub for landlords, leasing agents, and tenants — portfolios,
-              showings, leases, rent in MXN, and maintenance across the coast.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {!session && (
-                <>
-                  <Button size="lg" asChild>
-                    <Link href="/register">Start application</Link>
-                  </Button>
-                  <Button size="lg" variant="outline" asChild>
-                    <Link href="/login">Staff login</Link>
-                  </Button>
-                  <Button size="lg" variant="ghost" asChild>
-                    <Link href="/register/agent">Register as agent</Link>
-                  </Button>
-                </>
-              )}
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 py-6 sm:px-6 sm:py-8">
+        <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-10">
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-primary">
+                Quintana Roo · Long-term rentals
+              </p>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl lg:text-[2rem] lg:leading-tight">
+                Tenant Application Portal
+              </h1>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Apply for available properties, schedule viewings, and follow your
+                application from screening through move-in. Our team and leasing
+                agents use this portal to review applications and coordinate
+                showings on your behalf.
+              </p>
             </div>
+
+            <div>
+              <h2 className="text-sm font-semibold">How it works</h2>
+              <ol className="mt-3 hidden gap-2 sm:grid sm:grid-cols-5">
+                {STEPS.map((step, index) => (
+                  <li
+                    key={step.title}
+                    className="flex flex-col items-center rounded-lg border border-border/60 bg-card/80 px-2 py-3 text-center shadow-sm"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {index + 1}
+                    </span>
+                    <step.icon className="mt-2 h-4 w-4 text-primary" />
+                    <span className="mt-1.5 text-xs font-medium leading-tight">
+                      {step.title}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <ol className="mt-3 space-y-2 sm:hidden">
+                {STEPS.map((step, index) => (
+                  <li
+                    key={step.title}
+                    className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/80 px-3 py-2.5"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium">{step.title}</p>
+                      <p className="text-xs text-muted-foreground">{step.text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              New here?{" "}
+              <Link
+                href="/register"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Create an account
+              </Link>{" "}
+              to start your application. Landlords and agents can sign in with
+              their staff credentials below.
+            </p>
           </div>
 
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-primary/15 via-transparent to-accent/40 blur-2xl" />
-            <div className="relative rounded-2xl border bg-card p-6 shadow-lg ring-1 ring-border/60">
-              <p className="text-sm font-medium text-muted-foreground">
-                Portfolio locations
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {LOCATIONS.map((city) => (
-                  <span
-                    key={city}
-                    className="rounded-full border bg-background px-3 py-1.5 text-sm font-medium shadow-sm"
-                  >
-                    {city}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                <Feature
-                  icon={Shield}
-                  title="Landlord hub"
-                  text="Properties, prospects, leases, and rent in one dashboard."
-                />
-                <Feature
-                  icon={Users}
-                  title="Agent tools"
-                  text="Showings, availability, and commissions for your team."
-                />
-              </div>
-            </div>
+          <div className="lg:pt-1">
+            <Suspense
+              fallback={
+                <div className="h-[340px] animate-pulse rounded-xl border bg-muted/40" />
+              }
+            >
+              <LoginForm
+                title="Sign in"
+                description="Access your application, viewings, and lease."
+              />
+            </Suspense>
           </div>
         </div>
       </main>
 
-      <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
-        PlayaStays · Quintana Roo · MXN · SPEI-friendly payments
+      <footer className="shrink-0 border-t border-border/60 py-3 text-center text-xs text-muted-foreground">
+        PlayaStays · Playa del Carmen · Tulum · Cozumel · Puerto Morelos
       </footer>
-    </div>
-  );
-}
-
-function Feature({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: typeof Shield;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-xl bg-muted/50 p-4">
-      <div className="mb-2 inline-flex rounded-lg bg-primary/10 p-2 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <p className="font-medium">{title}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{text}</p>
     </div>
   );
 }

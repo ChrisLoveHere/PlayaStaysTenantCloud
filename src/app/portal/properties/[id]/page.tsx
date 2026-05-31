@@ -16,7 +16,9 @@ import {
 } from "@/lib/queries/applications";
 import { getAvailablePropertyById } from "@/lib/queries/properties";
 import { getActiveAgents } from "@/lib/queries/showings";
+import { getDocumentsForEntity } from "@/lib/queries/documents";
 import { isProspectProfileComplete } from "@/lib/utils/prospect-profile";
+import { hasRequiredScreeningDocuments } from "@/lib/utils/screening-documents";
 import { getLocationLabel } from "@/lib/constants/locations";
 import { formatMXN } from "@/lib/utils/format";
 
@@ -48,6 +50,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
   const isProspect = session.user.role === "prospect";
 
   let profileComplete = false;
+  let documentsComplete = false;
   let hasApplication = false;
   let agents: { id: string; name: string | null }[] = [];
 
@@ -55,9 +58,11 @@ export default async function PropertyDetailPage({ params }: PageProps) {
     const prospect = await getProspectByUserId(session.user.id);
     if (prospect) {
       const userPhone = await getUserPhone(session.user.id);
+      const screeningDocs = await getDocumentsForEntity("prospect", prospect.id);
       profileComplete = isProspectProfileComplete(prospect, {
         phone: userPhone,
       });
+      documentsComplete = hasRequiredScreeningDocuments(screeningDocs);
       const applications = await getApplicationsForProspect(prospect.id);
       hasApplication = applications.some((a) => a.propertyId === property.id);
     }
@@ -156,6 +161,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
               <ApplyToPropertyForm
                 properties={availableProperties}
                 profileComplete={profileComplete}
+                documentsComplete={documentsComplete}
                 defaultPropertyId={property.id}
                 compact
               />

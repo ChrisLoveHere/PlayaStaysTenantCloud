@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
+import { AgentApplicationForm } from "@/components/applications/agent-application-form";
+import { IncomeScreeningBadge } from "@/components/applications/income-screening-badge";
 import { ProspectNotesPanel } from "@/components/prospects/prospect-notes-panel";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +78,15 @@ export default async function AgentApplicationDetailPage({ params }: PageProps) 
               {app.income != null && (
                 <Row label="Income" value={`${formatMXN(app.income)}/mo`} />
               )}
+              {app.income != null && app.monthlyRent != null && (
+                <div className="flex items-center justify-between gap-4 border-b py-2">
+                  <span className="text-muted-foreground">Income screening</span>
+                  <IncomeScreeningBadge
+                    incomeCents={app.income}
+                    monthlyRentCents={app.monthlyRent}
+                  />
+                </div>
+              )}
               {app.employment && (() => {
                 const employment = JSON.parse(app.employment) as {
                   employer?: string;
@@ -134,6 +145,7 @@ export default async function AgentApplicationDetailPage({ params }: PageProps) 
         </div>
 
         <div className="space-y-4">
+          <AgentApplicationForm applicationId={app.id} stage={app.stage} />
           <ProspectNotesPanel
             prospectId={app.prospectId}
             applicationId={app.id}

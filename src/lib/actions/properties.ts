@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { recordAuditLog } from "@/lib/audit/log";
 import type { PlayaLocation } from "@/lib/constants/locations";
 import { db } from "@/lib/db";
 import { properties } from "@/lib/db/schema";
@@ -94,7 +95,7 @@ export async function updateProperty(
   _prev: PropertyActionState,
   formData: FormData
 ): Promise<PropertyActionState> {
-  await requireLandlord();
+  const session = await requireLandlord();
   const parsed = parseFormData(formData);
 
   if (!parsed.success) {
@@ -109,6 +110,22 @@ export async function updateProperty(
     ? parseInt(data.commissionRate, 10)
     : null;
 
+  const [before] = await db
+    .select({
+      monthlyRent: properties.monthlyRent,
+      commissionRate: properties.commissionRate,
+      propertyCode: properties.propertyCode,
+    })
+    .from(properties)
+    .where(eq(properties.id, id))
+    .limit(1);
+
+  if (!before) return { error: "Property not found." };
+
+  const newMonthlyRent = parseMXNToCents(data.monthlyRent);
+  const newCommissionRate =
+    commissionRate && !Number.isNaN(commissionRate) ? commissionRate : null;
+
   try {
     await db
       .update(properties)
@@ -122,17 +139,47 @@ export async function updateProperty(
         cp: data.cp.trim(),
         pais: data.pais.trim(),
         status: data.status,
-        monthlyRent: parseMXNToCents(data.monthlyRent),
+        monthlyRent: newMonthlyRent,
         securityDeposit: parseMXNToCents(data.securityDeposit),
         description: data.description?.trim() || null,
         keycodes: data.keycodes?.trim() || null,
         amenities: data.amenities?.trim() || null,
-        commissionRate: commissionRate && !Number.isNaN(commissionRate) ? commissionRate : null,
+        commissionRate: newCommissionRate,
         updatedAt: new Date(),
       })
       .where(eq(properties.id, id));
   } catch {
     return { error: "Update failed. Property ID may already exist." };
+  }
+
+  if (before.monthlyRent !== newMonthlyRent) {
+    await recordAuditLog({
+      actorId: session.user.id,
+      action: "property.monthly_rent_changed",
+      entityType: "property",
+      entityId: id,
+      summary: `${before.propertyCode}: monthly rent updated`,
+      metadata: {
+        propertyCode: before.propertyCode,
+        from: before.monthlyRent,
+        to: newMonthlyRent,
+      },
+    });
+  }
+
+  if (before.commissionRate !== newCommissionRate) {
+    await recordAuditLog({
+      actorId: session.user.id,
+      action: "property.commission_rate_changed",
+      entityType: "property",
+      entityId: id,
+      summary: `${before.propertyCode}: commission rate updated`,
+      metadata: {
+        propertyCode: before.propertyCode,
+        from: before.commissionRate,
+        to: newCommissionRate,
+      },
+    });
   }
 
   revalidatePath("/landlord");

@@ -5,10 +5,13 @@ import { ApplicationDocumentsList } from "@/components/documents/application-doc
 import { ProspectShowingsList } from "@/components/showings/prospect-showings-list";
 import { MyApplicationsList } from "@/components/applications/my-applications-list";
 import { ProspectProfileForm } from "@/components/applications/prospect-profile-form";
+import { ProspectScreeningDocuments } from "@/components/applications/prospect-screening-documents";
+import { ApplicationTimeline } from "@/components/applications/application-timeline";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { prospectNav } from "@/lib/pages/placeholder";
 import {
   getApplicationsForProspect,
+  getApplicationStageHistoryForProspect,
   getAvailableProperties,
   getProspectByUserId,
   getUserPhone,
@@ -16,6 +19,7 @@ import {
 import { getDocumentsForEntity } from "@/lib/queries/documents";
 import { getShowingsForProspect } from "@/lib/queries/showings";
 import { isProspectProfileComplete } from "@/lib/utils/prospect-profile";
+import { hasRequiredScreeningDocuments } from "@/lib/utils/screening-documents";
 
 export default async function ApplicationPage() {
   const session = await auth();
@@ -26,17 +30,20 @@ export default async function ApplicationPage() {
   const prospect = await getProspectByUserId(session.user.id);
   if (!prospect) redirect("/portal");
 
-  const [myApplications, availableProperties, myShowings, userPhone] =
+  const [myApplications, availableProperties, myShowings, userPhone, stageHistory, screeningDocs] =
     await Promise.all([
       getApplicationsForProspect(prospect.id),
       getAvailableProperties(),
       getShowingsForProspect(prospect.id),
       getUserPhone(session.user.id),
+      getApplicationStageHistoryForProspect(prospect.id),
+      getDocumentsForEntity("prospect", prospect.id),
     ]);
 
   const profileComplete = isProspectProfileComplete(prospect, {
     phone: userPhone,
   });
+  const documentsComplete = hasRequiredScreeningDocuments(screeningDocs);
 
   const applicationDocGroups = await Promise.all(
     myApplications.map(async (app) => ({
@@ -60,10 +67,16 @@ export default async function ApplicationPage() {
             phone: userPhone,
           }}
         />
+        <ProspectScreeningDocuments
+          prospectId={prospect.id}
+          documents={screeningDocs}
+        />
         <ApplyToPropertyForm
           properties={availableProperties}
           profileComplete={profileComplete}
+          documentsComplete={documentsComplete}
         />
+        <ApplicationTimeline entries={stageHistory} />
         <div>
           <h2 className="mb-4 text-lg font-semibold">Screening documents</h2>
           <ApplicationDocumentsList

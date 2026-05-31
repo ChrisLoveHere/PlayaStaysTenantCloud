@@ -16,11 +16,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm() {
+export function LoginForm({
+  title = "Welcome back",
+  description = "Sign in to your PlayaStays account",
+}: {
+  title?: string;
+  description?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/portal";
   const registered = searchParams.get("registered");
+  const reset = searchParams.get("reset");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,13 +59,16 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md border-border/60 shadow-lg ring-1 ring-border/40">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-semibold">Welcome back</CardTitle>
-        <CardDescription>Sign in to your PlayaStays account</CardDescription>
+        <CardTitle className="text-2xl font-semibold">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {registered && (
             <p className="alert-success">Account created. Please sign in.</p>
+          )}
+          {reset && (
+            <p className="alert-success">Password updated. Please sign in.</p>
           )}
           {error && <p className="alert-error">{error}</p>}
           <div className="space-y-2">
@@ -74,7 +84,15 @@ export function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-primary hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"

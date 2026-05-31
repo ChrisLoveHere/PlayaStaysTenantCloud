@@ -28,11 +28,13 @@ type PropertyOption = {
 export function ApplyToPropertyForm({
   properties,
   profileComplete,
+  documentsComplete = true,
   defaultPropertyId,
   compact = false,
 }: {
   properties: PropertyOption[];
   profileComplete: boolean;
+  documentsComplete?: boolean;
   defaultPropertyId?: string;
   compact?: boolean;
 }) {
@@ -40,6 +42,8 @@ export function ApplyToPropertyForm({
     applyToProperty,
     {} as ApplicationActionState
   );
+
+  const canApply = profileComplete && documentsComplete;
 
   if (properties.length === 0) {
     return (
@@ -73,6 +77,11 @@ export function ApplyToPropertyForm({
               Save your profile above before applying.
             </p>
           )}
+          {profileComplete && !documentsComplete && (
+            <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Upload your government ID and income proof before applying.
+            </p>
+          )}
           {state.error && (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
               {state.error}
@@ -100,7 +109,7 @@ export function ApplyToPropertyForm({
                   id="propertyId"
                   name="propertyId"
                   required
-                  disabled={!profileComplete}
+                  disabled={!canApply}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                 >
                   <option value="">Choose a property...</option>
@@ -116,7 +125,7 @@ export function ApplyToPropertyForm({
           </div>
         </CardContent>
         <CardFooter className={compact ? "px-6 pb-6" : undefined}>
-          <Button type="submit" disabled={pending || !profileComplete}>
+          <Button type="submit" disabled={pending || !canApply}>
             {pending ? "Submitting..." : "Submit application"}
           </Button>
         </CardFooter>

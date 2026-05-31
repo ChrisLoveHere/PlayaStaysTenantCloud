@@ -16,6 +16,8 @@ import {
   formatMXN,
   formatPropertyAddress,
 } from "@/lib/utils/format";
+import { IncomeScreeningBadge } from "@/components/applications/income-screening-badge";
+import { evaluateIncomeVsRent } from "@/lib/utils/income-screening";
 import { getLocationLabel } from "@/lib/constants/locations";
 
 type PageProps = {
@@ -40,6 +42,8 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         yearsEmployed?: number;
       })
     : null;
+
+  const incomeScreening = evaluateIncomeVsRent(app.income, app.monthlyRent);
 
   return (
     <DashboardShell
@@ -78,6 +82,16 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
                 label="Income"
                 value={app.income ? formatMXN(app.income) + "/mo" : "—"}
               />
+              <div className="flex items-center justify-between gap-4 border-b py-2">
+                <span className="text-muted-foreground">Income screening</span>
+                <IncomeScreeningBadge
+                  incomeCents={app.income}
+                  monthlyRentCents={app.monthlyRent}
+                />
+              </div>
+              {!incomeScreening.meetsRequirement && app.income && (
+                <p className="text-xs text-amber-700">{incomeScreening.message}</p>
+              )}
               {employment && (
                 <>
                   <Row label="Employer" value={employment.employer ?? "—"} />

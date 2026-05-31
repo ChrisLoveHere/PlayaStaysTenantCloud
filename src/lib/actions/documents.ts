@@ -20,6 +20,7 @@ const UPLOAD_SUBFOLDERS: Record<DocumentEntityType, string> = {
   property: "properties",
   lease: "leases",
   application: "applications",
+  prospect: "prospects",
   maintenance_request: "maintenance",
   move_checklist: "move-checklists",
 };
@@ -38,6 +39,10 @@ function revalidateForEntity(entityType: DocumentEntityType, entityId: string) {
       revalidatePath(`/landlord/prospects/${entityId}`);
       revalidatePath("/landlord/prospects");
       revalidatePath("/portal/application");
+      break;
+    case "prospect":
+      revalidatePath("/portal/application");
+      revalidatePath("/portal/properties");
       break;
     case "maintenance_request":
       revalidatePath("/landlord/maintenance");

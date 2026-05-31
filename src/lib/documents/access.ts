@@ -113,6 +113,20 @@ export async function assertDocumentAccess(
     case "move_checklist":
       throw new Error("Forbidden");
 
+    case "prospect": {
+      const [prospect] = await db
+        .select({ userId: prospects.userId })
+        .from(prospects)
+        .where(eq(prospects.id, entityId))
+        .limit(1);
+
+      if (!prospect) throw new Error("Not found");
+
+      if (role === "prospect" && prospect.userId === userId) return;
+
+      throw new Error("Forbidden");
+    }
+
     default:
       throw new Error("Forbidden");
   }

@@ -466,6 +466,19 @@ export const notificationReads = pgTable(
   })
 );
 
+export const auditLogs = pgTable("audit_logs", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  summary: text("summary").notNull(),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const landlordSettings = pgTable("landlord_settings", {
   id: text("id").primaryKey().default("default"),
   speiClabe: text("spei_clabe"),

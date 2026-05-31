@@ -322,3 +322,16 @@ export function buildCommissionStatementHtml(input: {
      <p style="font-size:12px;color:#666;margin-top:24px;">PlayaStays · Quintana Roo, Mexico · MXN</p>`
   );
 }
+
+export function passwordResetEmail(input: { name: string; resetUrl: string }) {
+  return {
+    subject: "Reset your PlayaStays password",
+    html: layout(
+      "Password reset",
+      `<p>Hi ${input.name},</p>
+       <p>We received a request to reset your password. Click the link below to choose a new one. This link expires in 1 hour.</p>
+       <p><a href="${input.resetUrl}">Reset password</a></p>
+       <p>If you did not request this, you can ignore this email.</p>`
+    ),
+  };
+}

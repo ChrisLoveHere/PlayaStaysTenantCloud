@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   agentProfiles,
@@ -64,6 +64,8 @@ export async function getApplicationsForLandlord(stage?: ApplicationStage) {
       propertyCode: properties.propertyCode,
       location: properties.location,
       ciudad: properties.ciudad,
+      monthlyRent: properties.monthlyRent,
+      prospectIncome: prospects.income,
       assignedAgentId: applications.assignedAgentId,
     })
     .from(applications)
@@ -76,6 +78,48 @@ export async function getApplicationsForLandlord(stage?: ApplicationStage) {
     return rows.filter((r) => r.stage === stage);
   }
   return rows;
+}
+
+export async function getApplicationStageHistoryForProspect(prospectId: string) {
+  const appRows = await db
+    .select({
+      applicationId: applications.id,
+      propertyCode: properties.propertyCode,
+      stage: applications.stage,
+    })
+    .from(applications)
+    .innerJoin(properties, eq(applications.propertyId, properties.id))
+    .where(eq(applications.prospectId, prospectId))
+    .orderBy(desc(applications.updatedAt));
+
+  if (appRows.length === 0) return [];
+
+  const applicationIds = appRows.map((a) => a.applicationId);
+
+  const history = await db
+    .select({
+      id: applicationStageHistory.id,
+      applicationId: applicationStageHistory.applicationId,
+      fromStage: applicationStageHistory.fromStage,
+      toStage: applicationStageHistory.toStage,
+      notes: applicationStageHistory.notes,
+      createdAt: applicationStageHistory.createdAt,
+      changedByName: users.name,
+    })
+    .from(applicationStageHistory)
+    .leftJoin(users, eq(applicationStageHistory.changedById, users.id))
+    .where(inArray(applicationStageHistory.applicationId, applicationIds))
+    .orderBy(desc(applicationStageHistory.createdAt));
+
+  const appMeta = new Map(
+    appRows.map((a) => [a.applicationId, { propertyCode: a.propertyCode, currentStage: a.stage }])
+  );
+
+  return history.map((h) => ({
+    ...h,
+    propertyCode: appMeta.get(h.applicationId)?.propertyCode ?? "—",
+    currentStage: appMeta.get(h.applicationId)?.currentStage,
+  }));
 }
 
 export async function getApplicationsForAgent(agentProfileId: string) {

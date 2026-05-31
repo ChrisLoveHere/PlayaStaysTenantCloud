@@ -100,9 +100,18 @@ export const DOCUMENT_ENTITY_TYPES = [
   "property",
   "lease",
   "application",
+  "prospect",
   "maintenance_request",
   "move_checklist",
 ] as const;
+
+export const AUDIT_ACTIONS = [
+  "application.stage_changed",
+  "rent_payment.updated",
+  "property.commission_rate_changed",
+  "property.monthly_rent_changed",
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 export type DocumentEntityType = (typeof DOCUMENT_ENTITY_TYPES)[number];
 
 export const MOVE_CHECKLIST_TYPES = ["move_in", "move_out"] as const;

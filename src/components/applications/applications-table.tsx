@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { IncomeScreeningBadge } from "@/components/applications/income-screening-badge";
 import {
   Table,
   TableBody,
@@ -21,6 +22,8 @@ type ApplicationRow = {
   propertyCode: string;
   location: string;
   ciudad: string;
+  monthlyRent?: number;
+  prospectIncome?: number | null;
 };
 
 const stageVariant = (stage: string) => {
@@ -52,6 +55,7 @@ export function ApplicationsTable({
             <TableHead>Property</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Stage</TableHead>
+            <TableHead>Income</TableHead>
             <TableHead>Rating</TableHead>
             <TableHead>Submitted</TableHead>
             <TableHead />
@@ -70,6 +74,16 @@ export function ApplicationsTable({
                 <Badge variant={stageVariant(app.stage)}>
                   {applicationStageLabel(app.stage)}
                 </Badge>
+              </TableCell>
+              <TableCell>
+                {app.monthlyRent != null ? (
+                  <IncomeScreeningBadge
+                    incomeCents={app.prospectIncome}
+                    monthlyRentCents={app.monthlyRent}
+                  />
+                ) : (
+                  "—"
+                )}
               </TableCell>
               <TableCell>{app.rating ? `${app.rating}/5` : "—"}</TableCell>
               <TableCell className="text-sm text-muted-foreground">

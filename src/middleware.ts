@@ -4,8 +4,8 @@ import { getDashboardPath } from "@/lib/auth/roles";
 import type { UserRole } from "@/lib/db/schema";
 import { NextResponse } from "next/server";
 
-const publicRoutes = ["/", "/login", "/register"];
-const authRoutes = ["/login", "/register"];
+const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
+const authRoutes = ["/login", "/register", "/forgot-password", "/reset-password"];
 
 function isPublicPath(pathname: string) {
   return (

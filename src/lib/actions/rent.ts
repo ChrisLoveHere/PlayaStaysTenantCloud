@@ -5,6 +5,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { sendRentReceiptEmail } from "@/lib/email/notifications";
+import { recordAuditLog } from "@/lib/audit/log";
 import { db } from "@/lib/db";
 import { properties, rentPayments, tenants, users } from "@/lib/db/schema";
 import type { RentPaymentStatus } from "@/lib/db/schema";
@@ -162,10 +163,14 @@ export async function markRentPaymentPaid(
     notes?: string | null;
   }
 ): Promise<RentActionState> {
-  await requireLandlord();
+  const session = await requireLandlord();
 
   const [before] = await db
-    .select({ status: rentPayments.status })
+    .select({
+      status: rentPayments.status,
+      amount: rentPayments.amount,
+      propertyId: rentPayments.propertyId,
+    })
     .from(rentPayments)
     .where(eq(rentPayments.id, paymentId))
     .limit(1);
@@ -186,6 +191,19 @@ export async function markRentPaymentPaid(
       updatedAt: new Date(),
     })
     .where(eq(rentPayments.id, paymentId));
+
+  await recordAuditLog({
+    actorId: session.user.id,
+    action: "rent_payment.updated",
+    entityType: "rent_payment",
+    entityId: paymentId,
+    summary: `Rent payment marked paid`,
+    metadata: {
+      fromStatus: before.status,
+      toStatus: "paid",
+      amount: before.amount,
+    },
+  });
 
   const tenantUser = alias(users, "tenant_user");
   const [row] = await db
@@ -233,7 +251,7 @@ export async function updateRentPayment(
   _prev: RentActionState,
   formData: FormData
 ): Promise<RentActionState> {
-  await requireLandlord();
+  const session = await requireLandlord();
 
   const parsed = updateRentPaymentSchema.safeParse({
     status: formData.get("status"),
@@ -246,7 +264,10 @@ export async function updateRentPayment(
   if (!parsed.success) return { error: "Invalid payment data." };
 
   const [before] = await db
-    .select({ status: rentPayments.status })
+    .select({
+      status: rentPayments.status,
+      amount: rentPayments.amount,
+    })
     .from(rentPayments)
     .where(eq(rentPayments.id, paymentId))
     .limit(1);
@@ -271,6 +292,21 @@ export async function updateRentPayment(
       updatedAt: new Date(),
     })
     .where(eq(rentPayments.id, paymentId));
+
+  if (before.status !== status) {
+    await recordAuditLog({
+      actorId: session.user.id,
+      action: "rent_payment.updated",
+      entityType: "rent_payment",
+      entityId: paymentId,
+      summary: `Rent payment status changed to ${status}`,
+      metadata: {
+        fromStatus: before.status,
+        toStatus: status,
+        amount: before.amount,
+      },
+    });
+  }
 
   if (status === "paid" && before.status !== "paid") {
     const tenantUser = alias(users, "tenant_user");

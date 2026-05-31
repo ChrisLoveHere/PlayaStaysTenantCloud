@@ -1,5 +1,12 @@
 import { z } from "zod";
+import type { ApplicationStage } from "@/lib/db/schema";
 import { APPLICATION_STAGES } from "@/lib/db/schema/enums";
+
+/** Stages agents may set on assigned applications. */
+export const AGENT_APPLICATION_STAGES = [
+  "property_viewed",
+  "screening",
+] as const satisfies readonly ApplicationStage[];
 
 export const prospectProfileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),

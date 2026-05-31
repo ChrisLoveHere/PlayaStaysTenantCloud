@@ -20,10 +20,14 @@ import type { ApplicationStage } from "@/lib/db/schema";
 import {
   getProspectByUserId,
 } from "@/lib/queries/applications";
+import { getDocumentsForEntity } from "@/lib/queries/documents";
+import { recordAuditLog } from "@/lib/audit/log";
+import { hasRequiredScreeningDocuments } from "@/lib/utils/screening-documents";
 import {
   applicationReviewSchema,
   applyToPropertySchema,
   prospectProfileSchema,
+  AGENT_APPLICATION_STAGES,
 } from "@/lib/validations/application";
 import { parseMXNToCents } from "@/lib/utils/format";
 import { isProspectProfileComplete } from "@/lib/utils/prospect-profile";
@@ -63,6 +67,15 @@ async function recordStageChange(
     toStage,
     changedById,
     notes,
+  });
+
+  await recordAuditLog({
+    actorId: changedById,
+    action: "application.stage_changed",
+    entityType: "application",
+    entityId: applicationId,
+    summary: `Application stage changed from ${fromStage ?? "new"} to ${toStage}`,
+    metadata: { fromStage, toStage, notes: notes ?? null },
   });
 }
 
@@ -162,6 +175,14 @@ export async function applyToProperty(
   if (!isProspectProfileComplete(prospect, user)) {
     return {
       error: "Complete your rental application profile before applying.",
+    };
+  }
+
+  const screeningDocs = await getDocumentsForEntity("prospect", prospect.id);
+  if (!hasRequiredScreeningDocuments(screeningDocs)) {
+    return {
+      error:
+        "Upload your government ID and income proof in the screening documents section before applying.",
     };
   }
 
@@ -302,6 +323,67 @@ export async function updateApplicationReview(
 
   revalidatePath("/landlord/prospects");
   revalidatePath(`/landlord/prospects/${applicationId}`);
+  revalidatePath(`/agent/prospects/${applicationId}`);
+  revalidatePath("/portal/application");
+  return { success: "Application updated." };
+}
+
+export async function updateApplicationByAgent(
+  applicationId: string,
+  _prev: ApplicationActionState,
+  formData: FormData
+): Promise<ApplicationActionState> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "agent") {
+    return { error: "Forbidden." };
+  }
+
+  const { getAgentProfileByUserId } = await import("@/lib/auth/agent");
+  const profile = await getAgentProfileByUserId(session.user.id);
+  if (!profile?.isActive) return { error: "Forbidden." };
+
+  const stage = formData.get("stage") as ApplicationStage;
+  const notes = (formData.get("notes") as string)?.trim() || undefined;
+
+  if (!AGENT_APPLICATION_STAGES.includes(stage as (typeof AGENT_APPLICATION_STAGES)[number])) {
+    return { error: "Agents cannot set this stage." };
+  }
+
+  const [current] = await db
+    .select({
+      stage: applications.stage,
+      assignedAgentId: applications.assignedAgentId,
+    })
+    .from(applications)
+    .where(eq(applications.id, applicationId))
+    .limit(1);
+
+  if (!current) return { error: "Application not found." };
+  if (current.assignedAgentId !== profile.id) {
+    return { error: "You are not assigned to this prospect." };
+  }
+
+  if (current.stage === stage) {
+    return { success: "No changes to save." };
+  }
+
+  await db
+    .update(applications)
+    .set({ stage, updatedAt: new Date() })
+    .where(eq(applications.id, applicationId));
+
+  await recordStageChange(
+    applicationId,
+    current.stage,
+    stage,
+    session.user.id,
+    notes
+  );
+
+  revalidatePath(`/agent/prospects/${applicationId}`);
+  revalidatePath("/agent/prospects");
+  revalidatePath(`/landlord/prospects/${applicationId}`);
+  revalidatePath("/portal/application");
   return { success: "Application updated." };
 }
 
