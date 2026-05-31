@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Landlord Hub
 
-## Getting Started
+Unified property management for landlords, leasing agents, and tenants — built for Mexico (MXN, flexible addresses, SPEI-friendly rent tracking).
 
-First, run the development server:
+## Tech stack
+
+- **Next.js 16** (App Router) + React + TypeScript
+- **Tailwind CSS** + **shadcn/ui**
+- **SQLite** + **Drizzle ORM** (easy local start; Postgres-ready path documented)
+- **Auth.js** (NextAuth v5) with role-based access
+- **FullCalendar** (showings + agent availability)
+- Local file uploads (upgradeable to S3/Vercel Blob)
+
+## Quick start
 
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Copy environment file
+cp .env.example .env.local
+
+# 3. Generate AUTH_SECRET and add to .env.local
+openssl rand -base64 32
+
+# 4. Push database schema
+npm run db:push
+
+# 5. Seed demo data
+npm run db:seed
+
+# 6. Start dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Demo accounts (after seed)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role     | Email                 | Password     |
+|----------|-----------------------|--------------|
+| Landlord | landlord@example.com  | password123  |
+| Agent    | agent@example.com     | password123  |
+| Prospect | prospect@example.com  | password123  |
 
-## Learn More
+## User roles
 
-To learn more about Next.js, take a look at the following resources:
+| Role     | Dashboard   | Access |
+|----------|-------------|--------|
+| Landlord | `/landlord` | Full portfolio management |
+| Agent    | `/agent`    | Assigned prospects, showings, availability, commissions |
+| Prospect | `/portal`   | Application, property search |
+| Tenant   | `/portal`   | Lease, payments, maintenance |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── api/auth/          # Auth.js handlers
+│   ├── landlord/          # Landlord dashboard & modules
+│   ├── agent/             # Agent dashboard & modules
+│   ├── portal/            # Tenant / prospect portal
+│   ├── login/ register/   # Auth pages
+│   └── page.tsx           # Marketing landing
+├── components/
+│   ├── auth/              # Login, register forms
+│   ├── layout/            # Dashboard shell, nav
+│   └── ui/                # shadcn components
+├── lib/
+│   ├── actions/           # Server actions
+│   ├── auth/              # Session helpers
+│   ├── db/
+│   │   └── schema/        # Drizzle tables, relations, enums
+│   └── utils/             # MXN formatting, labels
+├── auth.ts                # Auth.js config
+└── middleware.ts          # Route protection by role
+```
 
-## Deploy on Vercel
+## Database schema
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for full ERD, relationships, and workflow details.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Core tables
+
+- **users** — auth + role (`landlord` | `agent` | `tenant` | `prospect`)
+- **agent_profiles** — commission settings per agent
+- **properties** — Mexico address fields, rent/deposit in MXN cents
+- **prospects** — screening data linked to user account
+- **applications** — prospect ↔ property ↔ agent with pipeline stage
+- **showings** — scheduled viewings
+- **agent_availability_blocks** — agent calendar blocks
+- **tenants** — active/past tenants with history link to prospect
+- **leases** — dates, document URL, renewal tracking
+- **commissions** — recorded when lease signed
+- **maintenance_requests** — tenant-submitted tickets
+- **rent_payments** — manual SPEI-friendly tracking
+- **documents** — polymorphic file attachments
+
+## Scripts
+
+| Command        | Description              |
+|----------------|--------------------------|
+| `npm run dev`  | Start development server |
+| `npm run db:push` | Push schema to SQLite |
+| `npm run db:seed` | Seed demo accounts    |
+| `npm run db:studio` | Drizzle Studio GUI  |
+
+## Deployment (Vercel)
+
+1. Set `AUTH_SECRET` and `AUTH_URL` in Vercel env vars
+2. For production DB, use Vercel Postgres or Neon and update `DATABASE_URL`
+3. Note: current schema uses SQLite — migrate to `pgTable` definitions before production Postgres deploy
+
+## License
+
+Private — all rights reserved.
