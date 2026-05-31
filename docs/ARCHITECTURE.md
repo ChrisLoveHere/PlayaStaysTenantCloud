@@ -142,8 +142,8 @@ Enforced in:
 | 3 | Prospects, applications, screening workflow |
 | 4 | Showings + FullCalendar + agent availability |
 | 5 | Leases, tenant conversion, commissions |
-| 6 | Rent payments + maintenance portal |
-| 7 | Email reminders (renewals, overdue rent) |
+| ✅ 6 | Rent payments + maintenance portal |
+| ✅ 7 | Email reminders (renewals, overdue rent) |
 
 ## Mexico-specific fields
 

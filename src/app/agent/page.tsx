@@ -1,6 +1,9 @@
 import { auth } from "@/auth";
+import { getAgentProfileByUserId } from "@/lib/auth/agent";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAgentDashboardStats } from "@/lib/queries/reminders";
+import { formatMXN } from "@/lib/utils/format";
 
 const navItems = [
   { href: "/agent", label: "Overview" },
@@ -13,6 +16,13 @@ const navItems = [
 
 export default async function AgentDashboardPage() {
   const session = await auth();
+  const profile = session?.user?.id
+    ? await getAgentProfileByUserId(session.user.id)
+    : null;
+
+  const stats = profile
+    ? await getAgentDashboardStats(profile.id)
+    : { upcomingShowings: 0, activeProspects: 0, pendingCommission: 0 };
 
   return (
     <DashboardShell
@@ -29,7 +39,7 @@ export default async function AgentDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">—</p>
+            <p className="text-3xl font-bold">{stats.upcomingShowings}</p>
           </CardContent>
         </Card>
         <Card>
@@ -39,7 +49,7 @@ export default async function AgentDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">—</p>
+            <p className="text-3xl font-bold">{stats.activeProspects}</p>
           </CardContent>
         </Card>
         <Card>
@@ -49,7 +59,9 @@ export default async function AgentDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">—</p>
+            <p className="text-3xl font-bold">
+              {formatMXN(stats.pendingCommission)}
+            </p>
           </CardContent>
         </Card>
       </div>

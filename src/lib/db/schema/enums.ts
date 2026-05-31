@@ -79,6 +79,14 @@ export type CommissionType = (typeof COMMISSION_TYPES)[number];
 export const COMMISSION_STATUSES = ["pending", "paid"] as const;
 export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];
 
+export const NOTIFICATION_TYPES = [
+  "overdue_rent",
+  "overdue_rent_followup",
+  "lease_renewal_60",
+  "lease_renewal_30",
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
 export const PLAYA_LOCATIONS = [
   "playa_del_carmen",
   "puerto_morelos",

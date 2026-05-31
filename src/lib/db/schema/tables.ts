@@ -13,6 +13,7 @@ import type {
   LeaseStatus,
   MaintenancePriority,
   MaintenanceStatus,
+  NotificationType,
   PropertyStatus,
   PlayaLocation,
   RentPaymentStatus,
@@ -364,4 +365,14 @@ export const documents = pgTable("documents", {
   mimeType: text("mime_type"),
   uploadedById: text("uploaded_by_id").references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const notificationLog = pgTable("notification_log", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  type: text("type").$type<NotificationType>().notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
 });

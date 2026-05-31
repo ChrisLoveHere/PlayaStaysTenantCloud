@@ -19,6 +19,8 @@ import {
   getRevenueByCity,
   getStatusDistribution,
 } from "@/lib/queries/portfolio";
+import { getUpcomingLeaseRenewals } from "@/lib/queries/reminders";
+import { UpcomingRenewalsCard } from "@/components/dashboard/upcoming-renewals-card";
 import {
   getLocationLabel,
   parseLocationFilter,
@@ -34,13 +36,14 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
   const { city: cityParam } = await searchParams;
   const city = parseLocationFilter(cityParam);
 
-  const [stats, cityBreakdown, occupancyData, revenueData, statusData] =
+  const [stats, cityBreakdown, occupancyData, revenueData, statusData, renewals] =
     await Promise.all([
       getPortfolioStats(city),
       city === "all" ? getCityBreakdown() : Promise.resolve([]),
       city === "all" ? getOccupancyByCity() : Promise.resolve([]),
       city === "all" ? getRevenueByCity() : Promise.resolve([]),
       getStatusDistribution(city),
+      city === "all" ? getUpcomingLeaseRenewals(60) : Promise.resolve([]),
     ]);
 
   const subtitle =
@@ -85,6 +88,7 @@ export default async function LandlordDashboardPage({ searchParams }: PageProps)
             <StatusDistributionChart data={statusData} />
             <CityBreakdownTable data={cityBreakdown} />
           </div>
+          <UpcomingRenewalsCard items={renewals} />
         </>
       ) : (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">

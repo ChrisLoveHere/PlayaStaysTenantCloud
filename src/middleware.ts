@@ -11,7 +11,8 @@ function isPublicPath(pathname: string) {
   return (
     publicRoutes.some((route) => pathname === route) ||
     pathname.startsWith("/register/") ||
-    pathname.startsWith("/api/auth")
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/cron")
   );
 }
 

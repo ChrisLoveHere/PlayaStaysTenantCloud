@@ -199,22 +199,3 @@ export async function getTenantLeaseForUser(userId: string) {
 
   return lease ? { tenant, lease } : null;
 }
-
-export async function getUpcomingRenewals(daysAhead = 60) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() + daysAhead);
-
-  return db
-    .select({
-      id: leases.id,
-      endDate: leases.endDate,
-      propertyCode: properties.propertyCode,
-      tenantName: users.name,
-    })
-    .from(leases)
-    .innerJoin(properties, eq(leases.propertyId, properties.id))
-    .innerJoin(tenants, eq(leases.tenantId, tenants.id))
-    .innerJoin(users, eq(tenants.userId, users.id))
-    .where(eq(leases.status, "signed"))
-    .orderBy(leases.endDate);
-}
