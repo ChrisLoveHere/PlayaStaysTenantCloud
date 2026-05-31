@@ -138,6 +138,32 @@ export function newApplicationLandlordEmail(input: {
   };
 }
 
+export function showingRequestLandlordEmail(input: {
+  prospectName: string;
+  propertyCode: string;
+  agentName: string;
+  scheduledAt: Date;
+  notes: string | null;
+}) {
+  const when = input.scheduledAt.toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return {
+    subject: `Showing request — ${input.propertyCode}`,
+    html: layout(
+      "New showing request",
+      `<p><strong>${input.prospectName}</strong> requested a showing for
+       <strong>${input.propertyCode}</strong>.</p>
+       <p><strong>When:</strong> ${when}<br/>
+       <strong>Agent:</strong> ${input.agentName}</p>
+       ${input.notes ? `<p><strong>Notes:</strong> ${input.notes}</p>` : ""}
+       <p><a href="${appUrl}/landlord/showings">Review & confirm</a></p>`
+    ),
+  };
+}
+
 export function rentReceiptEmail(input: {
   tenantName: string;
   propertyCode: string;

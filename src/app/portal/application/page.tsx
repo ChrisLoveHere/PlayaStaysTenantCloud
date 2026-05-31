@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ApplyToPropertyForm } from "@/components/applications/apply-to-property-form";
 import { ApplicationDocumentsList } from "@/components/documents/application-documents-list";
+import { ProspectShowingsList } from "@/components/showings/prospect-showings-list";
 import { MyApplicationsList } from "@/components/applications/my-applications-list";
 import { ProspectProfileForm } from "@/components/applications/prospect-profile-form";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -12,6 +13,7 @@ import {
   getProspectByUserId,
 } from "@/lib/queries/applications";
 import { getDocumentsForEntity } from "@/lib/queries/documents";
+import { getShowingsForProspect } from "@/lib/queries/showings";
 
 export default async function ApplicationPage() {
   const session = await auth();
@@ -22,9 +24,10 @@ export default async function ApplicationPage() {
   const prospect = await getProspectByUserId(session.user.id);
   if (!prospect) redirect("/portal");
 
-  const [myApplications, availableProperties] = await Promise.all([
+  const [myApplications, availableProperties, myShowings] = await Promise.all([
     getApplicationsForProspect(prospect.id),
     getAvailableProperties(),
+    getShowingsForProspect(prospect.id),
   ]);
 
   const profileComplete = !!prospect.income && !!prospect.employment;
@@ -57,6 +60,10 @@ export default async function ApplicationPage() {
             canUpload
             canDelete
           />
+        </div>
+        <div>
+          <h2 className="mb-4 text-lg font-semibold">My showings</h2>
+          <ProspectShowingsList items={myShowings} />
         </div>
         <MyApplicationsList items={myApplications} />
       </div>

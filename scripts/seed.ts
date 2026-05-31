@@ -9,9 +9,21 @@ import {
   agentProfiles,
   applications,
   properties,
+  propertyPhotos,
   prospects,
   users,
 } from "@/lib/db/schema";
+
+const LISTING_PHOTOS: Record<string, string[]> = {
+  "TUL-001": [
+    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
+    "https://images.unsplash.com/photo-1522708323590-d24dbb21b8fd?w=800",
+  ],
+  "CZM-001": [
+    "https://images.unsplash.com/photo-1560448204-e02f11c45772?w=800",
+    "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800",
+  ],
+};
 
 const SAMPLE_PROPERTIES = [
   {
@@ -174,7 +186,18 @@ async function seed() {
       .limit(1);
 
     if (!existing) {
-      await db.insert(properties).values(prop);
+      const [created] = await db.insert(properties).values(prop).returning();
+      const urls = LISTING_PHOTOS[prop.propertyCode];
+      if (created && urls) {
+        for (let i = 0; i < urls.length; i++) {
+          await db.insert(propertyPhotos).values({
+            propertyId: created.id,
+            url: urls[i],
+            caption: `${prop.propertyCode} photo ${i + 1}`,
+            sortOrder: i,
+          });
+        }
+      }
     }
   }
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -41,7 +42,12 @@ export function TenantsTable({ items }: { items: TenantRow[] }) {
           {items.map((t) => (
             <TableRow key={t.id}>
               <TableCell>
-                <div className="font-medium">{t.tenantName}</div>
+                <Link
+                  href={`/landlord/tenants/${t.id}`}
+                  className="font-medium hover:text-primary hover:underline"
+                >
+                  {t.tenantName}
+                </Link>
                 <div className="text-xs text-muted-foreground">{t.tenantEmail}</div>
               </TableCell>
               <TableCell>

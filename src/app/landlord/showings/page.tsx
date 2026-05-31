@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { PendingShowingRequests } from "@/components/showings/pending-showing-requests";
 import { ScheduleShowingForm } from "@/components/showings/schedule-showing-form";
 import { ShowingsCalendar } from "@/components/showings/showings-calendar";
 import { ShowingsTable } from "@/components/showings/showings-table";
@@ -7,16 +8,18 @@ import { SectionHeader } from "@/components/layout/page-header";
 import { landlordNav } from "@/lib/pages/placeholder";
 import {
   getAllShowingsCalendarEvents,
+  getPendingShowingRequests,
   getScheduleFormOptions,
   getShowingsForLandlord,
 } from "@/lib/queries/showings";
 
 export default async function LandlordShowingsPage() {
   const session = await auth();
-  const [showings, events, formOptions] = await Promise.all([
+  const [showings, events, formOptions, pendingRequests] = await Promise.all([
     getShowingsForLandlord(),
     getAllShowingsCalendarEvents(),
     getScheduleFormOptions(),
+    getPendingShowingRequests(),
   ]);
 
   return (
@@ -28,6 +31,7 @@ export default async function LandlordShowingsPage() {
       userName={session?.user?.name}
     >
       <div className="space-y-8">
+        <PendingShowingRequests items={pendingRequests} />
         <ScheduleShowingForm
           properties={formOptions.properties}
           prospects={formOptions.prospects}

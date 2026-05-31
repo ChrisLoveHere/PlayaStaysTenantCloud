@@ -153,6 +153,65 @@ export async function getScheduleFormOptions() {
   return { properties: propertyList, prospects: prospectList, agents: agentList };
 }
 
+export async function getActiveAgents() {
+  return db
+    .select({
+      id: agentProfiles.id,
+      name: users.name,
+    })
+    .from(agentProfiles)
+    .innerJoin(users, eq(agentProfiles.userId, users.id))
+    .where(eq(agentProfiles.isActive, true))
+    .orderBy(users.name);
+}
+
+export async function getShowingsForProspect(prospectId: string) {
+  const agentUser = alias(users, "agent_user");
+
+  return db
+    .select({
+      id: showings.id,
+      scheduledAt: showings.scheduledAt,
+      durationMinutes: showings.durationMinutes,
+      status: showings.status,
+      outcomeNotes: showings.outcomeNotes,
+      propertyCode: properties.propertyCode,
+      location: properties.location,
+      agentName: agentUser.name,
+    })
+    .from(showings)
+    .innerJoin(properties, eq(showings.propertyId, properties.id))
+    .innerJoin(agentProfiles, eq(showings.agentId, agentProfiles.id))
+    .innerJoin(agentUser, eq(agentProfiles.userId, agentUser.id))
+    .where(eq(showings.prospectId, prospectId))
+    .orderBy(desc(showings.scheduledAt));
+}
+
+export async function getPendingShowingRequests() {
+  const prospectUser = alias(users, "prospect_user");
+  const agentUser = alias(users, "agent_user");
+
+  return db
+    .select({
+      id: showings.id,
+      scheduledAt: showings.scheduledAt,
+      durationMinutes: showings.durationMinutes,
+      outcomeNotes: showings.outcomeNotes,
+      propertyCode: properties.propertyCode,
+      location: properties.location,
+      prospectName: prospectUser.name,
+      agentName: agentUser.name,
+    })
+    .from(showings)
+    .innerJoin(properties, eq(showings.propertyId, properties.id))
+    .innerJoin(prospects, eq(showings.prospectId, prospects.id))
+    .innerJoin(prospectUser, eq(prospects.userId, prospectUser.id))
+    .innerJoin(agentProfiles, eq(showings.agentId, agentProfiles.id))
+    .innerJoin(agentUser, eq(agentProfiles.userId, agentUser.id))
+    .where(eq(showings.status, "requested"))
+    .orderBy(showings.scheduledAt);
+}
+
 export async function findApplicationForShowing(
   prospectId: string,
   propertyId: string
@@ -187,6 +246,7 @@ export type CalendarEvent = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  requested: "#f59e0b",
   scheduled: "#0d9488",
   completed: "#059669",
   cancelled: "#64748b",

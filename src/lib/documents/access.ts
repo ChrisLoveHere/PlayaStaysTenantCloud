@@ -110,6 +110,9 @@ export async function assertDocumentAccess(
       throw new Error("Forbidden");
     }
 
+    case "move_checklist":
+      throw new Error("Forbidden");
+
     default:
       throw new Error("Forbidden");
   }

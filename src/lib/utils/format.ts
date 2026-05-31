@@ -53,6 +53,7 @@ export function propertyStatusLabel(status: string): string {
 
 export function showingStatusLabel(status: string): string {
   const labels: Record<string, string> = {
+    requested: "Requested",
     scheduled: "Scheduled",
     completed: "Completed",
     cancelled: "Cancelled",

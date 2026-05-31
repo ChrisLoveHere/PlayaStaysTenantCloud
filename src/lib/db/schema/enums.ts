@@ -30,6 +30,7 @@ export const APPLICATION_STAGES = [
 export type ApplicationStage = (typeof APPLICATION_STAGES)[number];
 
 export const SHOWING_STATUSES = [
+  "requested",
   "scheduled",
   "completed",
   "cancelled",
@@ -92,8 +93,12 @@ export const DOCUMENT_ENTITY_TYPES = [
   "lease",
   "application",
   "maintenance_request",
+  "move_checklist",
 ] as const;
 export type DocumentEntityType = (typeof DOCUMENT_ENTITY_TYPES)[number];
+
+export const MOVE_CHECKLIST_TYPES = ["move_in", "move_out"] as const;
+export type MoveChecklistType = (typeof MOVE_CHECKLIST_TYPES)[number];
 
 export const PLAYA_LOCATIONS = [
   "playa_del_carmen",

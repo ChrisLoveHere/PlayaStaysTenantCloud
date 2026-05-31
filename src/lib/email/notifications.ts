@@ -3,8 +3,10 @@ import {
   applicationStageEmail,
   newApplicationLandlordEmail,
   rentReceiptEmail,
+  showingRequestLandlordEmail,
 } from "@/lib/email/templates";
 import { getLandlordSettings, getLandlordNotifyEmail } from "@/lib/queries/settings";
+import { getShowingById } from "@/lib/queries/showings";
 import { applicationStageLabel } from "@/lib/utils/format";
 import type { ApplicationStage } from "@/lib/db/schema";
 
@@ -78,6 +80,31 @@ export async function sendRentReceiptEmail(input: {
 
   await sendEmail({
     to: input.tenantEmail,
+    subject: mail.subject,
+    html: mail.html,
+  });
+}
+
+export async function notifyLandlordShowingRequest(input: { showingId: string }) {
+  const settings = await getLandlordSettings();
+  if (!settings.sendApplicationEmails || !isEmailConfigured()) return;
+
+  const landlordEmail = await getLandlordNotifyEmail();
+  if (!landlordEmail) return;
+
+  const showing = await getShowingById(input.showingId);
+  if (!showing) return;
+
+  const mail = showingRequestLandlordEmail({
+    prospectName: showing.prospectName ?? "Prospect",
+    propertyCode: showing.propertyCode,
+    agentName: showing.agentName ?? "Agent",
+    scheduledAt: showing.scheduledAt,
+    notes: showing.outcomeNotes,
+  });
+
+  await sendEmail({
+    to: landlordEmail,
     subject: mail.subject,
     html: mail.html,
   });

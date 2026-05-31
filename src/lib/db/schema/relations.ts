@@ -9,6 +9,7 @@ import {
   documents,
   leases,
   maintenanceRequests,
+  moveChecklists,
   properties,
   propertyPhotos,
   prospects,
@@ -161,8 +162,20 @@ export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   }),
   leases: many(leases),
   maintenanceRequests: many(maintenanceRequests),
+  moveChecklists: many(moveChecklists),
   rentPayments: many(rentPayments),
   commissions: many(commissions),
+}));
+
+export const moveChecklistsRelations = relations(moveChecklists, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [moveChecklists.tenantId],
+    references: [tenants.id],
+  }),
+  completedBy: one(users, {
+    fields: [moveChecklists.completedById],
+    references: [users.id],
+  }),
 }));
 
 export const leasesRelations = relations(leases, ({ one, many }) => ({

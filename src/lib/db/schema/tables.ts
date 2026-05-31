@@ -13,6 +13,7 @@ import type {
   LeaseStatus,
   MaintenancePriority,
   MaintenanceStatus,
+  MoveChecklistType,
   NotificationType,
   PropertyStatus,
   PlayaLocation,
@@ -349,6 +350,23 @@ export const rentPayments = pgTable("rent_payments", {
   paymentMethod: text("payment_method"),
   reference: text("reference"),
   notes: text("notes"),
+  ...timestamps,
+});
+
+export const moveChecklists = pgTable("move_checklists", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  tenantId: text("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  type: text("type").$type<MoveChecklistType>().notNull(),
+  depositHeld: integer("deposit_held"),
+  depositReturned: integer("deposit_returned"),
+  deductionNotes: text("deduction_notes"),
+  conditionNotes: text("condition_notes"),
+  completedAt: timestamp("completed_at"),
+  completedById: text("completed_by_id").references(() => users.id),
   ...timestamps,
 });
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { GenerateLeaseButton } from "@/components/leases/generate-lease-button";
 import { LeaseManageForms } from "@/components/leases/lease-manage-forms";
 import { DocumentsPanel } from "@/components/documents/documents-panel";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -85,6 +86,7 @@ export default async function LeaseDetailPage({ params }: PageProps) {
       </Card>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
+        <GenerateLeaseButton leaseId={lease.id} />
         <DocumentsPanel
           entityType="lease"
           entityId={lease.id}

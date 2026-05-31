@@ -7,24 +7,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getLocationLabel } from "@/lib/constants/locations";
 import { showingStatusLabel } from "@/lib/utils/format";
 
-type ShowingRow = {
+type ProspectShowingRow = {
   id: string;
   scheduledAt: Date;
   durationMinutes: number;
   status: string;
+  outcomeNotes: string | null;
   propertyCode: string;
   location: string;
-  prospectName: string | null;
-  agentName?: string | null;
+  agentName: string | null;
 };
 
-export function ShowingsTable({ items }: { items: ShowingRow[] }) {
+export function ProspectShowingsList({ items }: { items: ProspectShowingRow[] }) {
   if (items.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">No showings scheduled yet.</p>
+      <p className="text-sm text-muted-foreground">
+        No showing requests yet. Browse properties to schedule a visit.
+      </p>
     );
   }
 
@@ -35,9 +36,7 @@ export function ShowingsTable({ items }: { items: ShowingRow[] }) {
           <TableRow>
             <TableHead>When</TableHead>
             <TableHead>Property</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Prospect</TableHead>
-            {items[0]?.agentName !== undefined && <TableHead>Agent</TableHead>}
+            <TableHead>Agent</TableHead>
             <TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
@@ -49,26 +48,11 @@ export function ShowingsTable({ items }: { items: ShowingRow[] }) {
                   dateStyle: "medium",
                   timeStyle: "short",
                 })}
-                <span className="block text-xs text-muted-foreground">
-                  {s.durationMinutes} min
-                </span>
               </TableCell>
               <TableCell className="font-mono text-sm">{s.propertyCode}</TableCell>
-              <TableCell>{getLocationLabel(s.location)}</TableCell>
-              <TableCell>{s.prospectName ?? "—"}</TableCell>
-              {s.agentName !== undefined && (
-                <TableCell>{s.agentName ?? "—"}</TableCell>
-              )}
+              <TableCell>{s.agentName ?? "—"}</TableCell>
               <TableCell>
-                <Badge
-                  variant={
-                    s.status === "requested"
-                      ? "secondary"
-                      : s.status === "scheduled"
-                        ? "default"
-                        : "outline"
-                  }
-                >
+                <Badge variant={s.status === "requested" ? "secondary" : "default"}>
                   {showingStatusLabel(s.status)}
                 </Badge>
               </TableCell>

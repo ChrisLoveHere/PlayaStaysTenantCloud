@@ -28,9 +28,13 @@ type PropertyOption = {
 export function ApplyToPropertyForm({
   properties,
   profileComplete,
+  defaultPropertyId,
+  compact = false,
 }: {
   properties: PropertyOption[];
   profileComplete: boolean;
+  defaultPropertyId?: string;
+  compact?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
     applyToProperty,
@@ -47,11 +51,21 @@ export function ApplyToPropertyForm({
     );
   }
 
+  const selectedProperty = defaultPropertyId
+    ? properties.find((p) => p.id === defaultPropertyId)
+    : null;
+
+  if (defaultPropertyId && !selectedProperty) {
+    return null;
+  }
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Apply to a property</CardTitle>
-      </CardHeader>
+      {!compact && (
+        <CardHeader>
+          <CardTitle className="text-base">Apply to a property</CardTitle>
+        </CardHeader>
+      )}
       <form action={formAction}>
         <CardContent className="space-y-4">
           {!profileComplete && (
@@ -70,25 +84,38 @@ export function ApplyToPropertyForm({
             </p>
           )}
           <div className="space-y-2">
-            <Label htmlFor="propertyId">Select property *</Label>
-            <select
-              id="propertyId"
-              name="propertyId"
-              required
-              disabled={!profileComplete}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-            >
-              <option value="">Choose a property...</option>
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.propertyCode} — {getLocationLabel(p.location)} —{" "}
-                  {formatMXN(p.monthlyRent)}/mo
-                </option>
-              ))}
-            </select>
+            {selectedProperty ? (
+              <>
+                <input type="hidden" name="propertyId" value={selectedProperty.id} />
+                <p className="text-sm">
+                  Applying for{" "}
+                  <strong className="font-mono">{selectedProperty.propertyCode}</strong>{" "}
+                  — {formatMXN(selectedProperty.monthlyRent)}/mo
+                </p>
+              </>
+            ) : (
+              <>
+                <Label htmlFor="propertyId">Select property *</Label>
+                <select
+                  id="propertyId"
+                  name="propertyId"
+                  required
+                  disabled={!profileComplete}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                >
+                  <option value="">Choose a property...</option>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.propertyCode} — {getLocationLabel(p.location)} —{" "}
+                      {formatMXN(p.monthlyRent)}/mo
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className={compact ? "px-6 pb-6" : undefined}>
           <Button type="submit" disabled={pending || !profileComplete}>
             {pending ? "Submitting..." : "Submit application"}
           </Button>

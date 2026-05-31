@@ -19,6 +19,7 @@ import {
 import type { ApplicationStage, LeaseStatus } from "@/lib/db/schema";
 import { parseMXNToCents } from "@/lib/utils/format";
 import { insertDocumentRecord } from "@/lib/actions/documents";
+import { buildLeaseHtml } from "@/lib/leases/template";
 import {
   createLeaseSchema,
   updateLeaseStatusSchema,
@@ -335,4 +336,86 @@ export async function uploadLeaseDocument(
   revalidatePath(`/landlord/leases/${leaseId}`);
   revalidatePath("/portal/lease");
   return { success: "Document uploaded." };
+}
+
+export async function generateLeaseDocument(
+  leaseId: string,
+  _prev: LeaseActionState,
+  _formData: FormData
+): Promise<LeaseActionState> {
+  const session = await requireLandlord();
+
+  const { getLeaseById } = await import("@/lib/queries/leases");
+  const lease = await getLeaseById(leaseId);
+  if (!lease) return { error: "Lease not found." };
+
+  const html = buildLeaseHtml({
+    leaseId: lease.id,
+    propertyCode: lease.propertyCode,
+    location: lease.location,
+    address: {
+      calle: lease.calle,
+      colonia: lease.colonia,
+      ciudad: lease.ciudad,
+      estado: lease.estado,
+      cp: lease.cp,
+    },
+    tenantName: lease.tenantName ?? "Tenant",
+    tenantEmail: lease.tenantEmail,
+    startDate: lease.startDate,
+    endDate: lease.endDate,
+    monthlyRent: lease.monthlyRent,
+    securityDeposit: lease.securityDeposit,
+  });
+
+  const filename = `lease-${lease.propertyCode}-${lease.id.slice(0, 8)}.html`;
+  const file = new File([html], filename, { type: "text/html" });
+  const { saveUploadedFile } = await import("@/lib/utils/upload");
+  const url = await saveUploadedFile(file, "leases");
+
+  await insertDocumentRecord({
+    entityType: "lease",
+    entityId: leaseId,
+    name: filename,
+    url,
+    mimeType: "text/html",
+    uploadedById: session.user.id,
+  });
+
+  if (lease.status === "draft") {
+    await db
+      .update(leases)
+      .set({ status: "sent", updatedAt: new Date() })
+      .where(eq(leases.id, leaseId));
+
+    if (lease.applicationId) {
+      const [app] = await db
+        .select({ stage: applications.stage })
+        .from(applications)
+        .where(eq(applications.id, lease.applicationId))
+        .limit(1);
+
+      if (app) {
+        await db
+          .update(applications)
+          .set({ stage: "lease_sent", updatedAt: new Date() })
+          .where(eq(applications.id, lease.applicationId));
+
+        if (app.stage !== "lease_sent") {
+          await recordStageChange(
+            lease.applicationId,
+            app.stage,
+            "lease_sent",
+            session.user.id,
+            "Lease document generated"
+          );
+        }
+      }
+    }
+  }
+
+  revalidatePath(`/landlord/leases/${leaseId}`);
+  revalidatePath("/landlord/leases");
+  revalidatePath("/portal/lease");
+  return { success: "Lease document generated." };
 }

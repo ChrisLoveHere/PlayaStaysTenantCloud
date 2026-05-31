@@ -15,9 +15,12 @@ import {
   findApplicationForShowing,
 } from "@/lib/queries/showings";
 import {
+  requestShowingSchema,
   scheduleShowingSchema,
   showingOutcomeSchema,
 } from "@/lib/validations/showing";
+import { notifyLandlordShowingRequest } from "@/lib/email/notifications";
+import { getProspectByUserId } from "@/lib/queries/applications";
 
 export type ShowingActionState = {
   error?: string;
@@ -125,6 +128,114 @@ export async function scheduleShowing(
   revalidatePath("/landlord/showings");
   revalidatePath("/agent/showings");
   return { success: "Showing scheduled." };
+}
+
+export async function requestShowing(
+  _prev: ShowingActionState,
+  formData: FormData
+): Promise<ShowingActionState> {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "prospect") {
+    return { error: "Only prospects can request showings." };
+  }
+
+  const parsed = requestShowingSchema.safeParse({
+    propertyId: formData.get("propertyId"),
+    agentId: formData.get("agentId"),
+    scheduledAt: formData.get("scheduledAt"),
+    durationMinutes: formData.get("durationMinutes") || "30",
+    notes: formData.get("notes") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: "Please fill in all required fields." };
+  }
+
+  const prospect = await getProspectByUserId(session.user.id);
+  if (!prospect) return { error: "Prospect profile not found." };
+
+  const scheduledAt = new Date(parsed.data.scheduledAt);
+  if (Number.isNaN(scheduledAt.getTime())) {
+    return { error: "Invalid date/time." };
+  }
+
+  if (scheduledAt.getTime() < Date.now()) {
+    return { error: "Please choose a future date and time." };
+  }
+
+  const app = await findApplicationForShowing(prospect.id, parsed.data.propertyId);
+
+  const [showing] = await db
+    .insert(showings)
+    .values({
+      propertyId: parsed.data.propertyId,
+      prospectId: prospect.id,
+      agentId: parsed.data.agentId,
+      applicationId: app?.id ?? null,
+      scheduledAt,
+      durationMinutes: Number(parsed.data.durationMinutes) || 30,
+      outcomeNotes: parsed.data.notes?.trim() || null,
+      status: "requested",
+    })
+    .returning({ id: showings.id });
+
+  if (showing) {
+    try {
+      await notifyLandlordShowingRequest({ showingId: showing.id });
+    } catch (err) {
+      console.error("[showing request email]", err);
+    }
+  }
+
+  revalidatePath("/portal/properties");
+  revalidatePath("/portal/application");
+  revalidatePath("/landlord/showings");
+  return {
+    success: "Showing request submitted. Your landlord will confirm the appointment.",
+  };
+}
+
+export async function confirmShowingRequest(
+  showingId: string
+): Promise<ShowingActionState> {
+  await requireLandlord();
+
+  const [showing] = await db
+    .select({ status: showings.status })
+    .from(showings)
+    .where(eq(showings.id, showingId))
+    .limit(1);
+
+  if (!showing) return { error: "Showing not found." };
+  if (showing.status !== "requested") {
+    return { error: "Only requested showings can be confirmed." };
+  }
+
+  await db
+    .update(showings)
+    .set({ status: "scheduled", updatedAt: new Date() })
+    .where(eq(showings.id, showingId));
+
+  revalidatePath("/landlord/showings");
+  revalidatePath("/agent/showings");
+  revalidatePath("/portal/application");
+  return { success: "Showing confirmed." };
+}
+
+export async function declineShowingRequest(
+  showingId: string
+): Promise<ShowingActionState> {
+  await requireLandlord();
+
+  await db
+    .update(showings)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(eq(showings.id, showingId));
+
+  revalidatePath("/landlord/showings");
+  revalidatePath("/agent/showings");
+  revalidatePath("/portal/application");
+  return { success: "Showing request declined." };
 }
 
 export async function updateShowingOutcome(

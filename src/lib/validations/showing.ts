@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { SHOWING_STATUSES } from "@/lib/db/schema/enums";
 
+export const requestShowingSchema = z.object({
+  propertyId: z.string().min(1, "Property required"),
+  agentId: z.string().min(1, "Select an agent"),
+  scheduledAt: z.string().min(1, "Date and time required"),
+  durationMinutes: z.string().default("30"),
+  notes: z.string().optional(),
+});
+
 export const scheduleShowingSchema = z.object({
   propertyId: z.string().min(1, "Select a property"),
   prospectId: z.string().min(1, "Select a prospect"),
