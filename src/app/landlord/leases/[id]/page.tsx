@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { GenerateLeaseButton } from "@/components/leases/generate-lease-button";
+import { LeaseWorkflowActions } from "@/components/leases/lease-workflow-actions";
 import { LeaseManageForms } from "@/components/leases/lease-manage-forms";
 import { DocumentsPanel } from "@/components/documents/documents-panel";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -29,6 +29,7 @@ export default async function LeaseDetailPage({ params }: PageProps) {
   if (!lease) notFound();
 
   const leaseDocuments = await getDocumentsForEntity("lease", id);
+  const hasDocument = leaseDocuments.length > 0 || Boolean(lease.documentUrl);
 
   return (
     <DashboardShell
@@ -49,6 +50,9 @@ export default async function LeaseDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle className="text-base">{lease.tenantName}</CardTitle>
             <Badge>{leaseStatusLabel(lease.status)}</Badge>
+            {lease.tenantSignedName && (
+              <Badge variant="outline">Signed as {lease.tenantSignedName}</Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
@@ -70,7 +74,13 @@ export default async function LeaseDetailPage({ params }: PageProps) {
               cp: lease.cp,
             })}
           />
-          {lease.documentUrl && leaseDocuments.length === 0 && (
+          {lease.signedAt && (
+            <Row
+              label="Signed"
+              value={new Date(lease.signedAt).toLocaleDateString("en-US")}
+            />
+          )}
+          {lease.documentUrl && (
             <div className="sm:col-span-2">
               <a
                 href={lease.documentUrl}
@@ -86,7 +96,12 @@ export default async function LeaseDetailPage({ params }: PageProps) {
       </Card>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
-        <GenerateLeaseButton leaseId={lease.id} />
+        <LeaseWorkflowActions
+          leaseId={lease.id}
+          status={lease.status}
+          hasDocument={hasDocument}
+          sentAt={lease.sentAt}
+        />
         <DocumentsPanel
           entityType="lease"
           entityId={lease.id}
@@ -94,9 +109,11 @@ export default async function LeaseDetailPage({ params }: PageProps) {
           canUpload
           canDelete
           title="Lease documents"
-          description="Upload signed lease PDFs and addenda."
+          description="Generated leases, signed copies, and addenda."
         />
-        <LeaseManageForms leaseId={lease.id} currentStatus={lease.status} />
+        <div className="lg:col-span-2">
+          <LeaseManageForms leaseId={lease.id} currentStatus={lease.status} />
+        </div>
       </div>
     </DashboardShell>
   );

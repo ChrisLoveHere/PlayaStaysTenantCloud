@@ -335,3 +335,34 @@ export function passwordResetEmail(input: { name: string; resetUrl: string }) {
     ),
   };
 }
+
+export function leaseSentEmail(input: {
+  tenantName: string;
+  propertyCode: string;
+  startDate: Date;
+  endDate: Date;
+  monthlyRent: number;
+}) {
+  const start = input.startDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const end = input.endDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return {
+    subject: `Lease ready to sign — ${input.propertyCode}`,
+    html: layout(
+      "Your lease is ready",
+      `<p>Hi ${input.tenantName},</p>
+       <p>Your lease for <strong>${input.propertyCode}</strong> is ready for review and signing.</p>
+       <p><strong>Term:</strong> ${start} – ${end}<br/>
+       <strong>Monthly rent:</strong> ${formatMXN(input.monthlyRent)}</p>
+       <p><a href="${appUrl}/portal/lease">Review and sign your lease</a></p>`
+    ),
+  };
+}

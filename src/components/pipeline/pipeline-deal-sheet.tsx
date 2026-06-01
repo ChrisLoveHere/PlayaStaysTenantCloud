@@ -91,20 +91,21 @@ export function PipelineDealSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{deal.prospectName ?? "Prospect"}</SheetTitle>
-          <SheetDescription>
-            {deal.propertyCode
-              ? `${deal.propertyCode} · ${pipelineColumnLabel(deal.columnId)}`
-              : "New registration — no property selected yet"}
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-lg">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <SheetHeader className="shrink-0 space-y-1 px-6 pt-6 pr-14 pb-2">
+            <SheetTitle>{deal.prospectName ?? "Prospect"}</SheetTitle>
+            <SheetDescription>
+              {deal.propertyCode
+                ? `${deal.propertyCode} · ${pipelineColumnLabel(deal.columnId)}`
+                : "New registration — no property selected yet"}
+            </SheetDescription>
+          </SheetHeader>
 
-        <div className="mt-6 space-y-6 text-sm">
+          <div className="min-w-0 space-y-6 px-6 pb-8 text-sm">
           <section className="space-y-2">
             <h4 className="font-semibold">Contact</h4>
-            <p className="text-muted-foreground">{deal.prospectEmail}</p>
+            <p className="break-words text-muted-foreground">{deal.prospectEmail}</p>
             {deal.prospectPhone && (
               <p className="text-muted-foreground">{deal.prospectPhone}</p>
             )}
@@ -263,6 +264,7 @@ export function PipelineDealSheet({
               </Link>
             </Button>
           )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>

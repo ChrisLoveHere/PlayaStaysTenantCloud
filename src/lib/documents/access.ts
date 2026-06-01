@@ -46,6 +46,10 @@ export async function assertDocumentAccess(
         throw new Error("Forbidden");
       }
 
+      if (role === "prospect" && lease.tenantUserId === userId && mode === "read") {
+        return;
+      }
+
       if (role === "agent" && mode === "read" && lease.assignedAgentId) {
         const [agent] = await db
           .select({ id: agentProfiles.id })

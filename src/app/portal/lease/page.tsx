@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { DocumentsPanel } from "@/components/documents/documents-panel";
+import { LeaseSignForm } from "@/components/leases/lease-sign-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { tenantNav } from "@/lib/pages/placeholder";
-import { getTenantLeaseForUser } from "@/lib/queries/leases";
+import { prospectNav, tenantNav } from "@/lib/pages/placeholder";
+import { getLeaseForUser } from "@/lib/queries/leases";
 import { getDocumentsForEntity } from "@/lib/queries/documents";
 import { getLocationLabel } from "@/lib/constants/locations";
 import {
@@ -19,46 +20,40 @@ export default async function LeasePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  if (session.user.role === "prospect") {
-    return (
-      <DashboardShell
-        title="PlayaStays"
-        subtitle="Lease & Documents"
-        navItems={[
-          { href: "/portal", label: "Home" },
-          { href: "/portal/application", label: "My Application" },
-          { href: "/portal/properties", label: "Properties" },
-        ]}
-        userName={session.user.name}
-      >
-        <Card>
-          <CardContent className="py-6 text-sm text-muted-foreground">
-            Your lease will appear here once your application is approved and a
-            lease is signed.{" "}
-            <Link href="/portal/application" className="text-primary hover:underline">
-              View application status
-            </Link>
-          </CardContent>
-        </Card>
-      </DashboardShell>
-    );
+  const role = session.user.role;
+  if (!["tenant", "prospect"].includes(role)) {
+    redirect("/portal");
   }
 
-  if (session.user.role !== "tenant") redirect("/portal");
-
-  const data = await getTenantLeaseForUser(session.user.id);
+  const data = await getLeaseForUser(session.user.id);
+  const navItems =
+    role === "tenant"
+      ? tenantNav
+      : data?.lease.status === "sent" || data?.lease.status === "signed"
+        ? [...prospectNav, { href: "/portal/lease", label: "Lease" }]
+        : prospectNav;
 
   if (!data) {
     return (
       <DashboardShell
         title="PlayaStays"
         subtitle="Lease & Documents"
-        navItems={tenantNav}
+        navItems={navItems}
         userName={session.user.name}
       >
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            No lease on file yet. Contact your landlord if you believe this is an error.
+            {role === "prospect" ? (
+              <>
+                Your lease will appear here once your application is approved and
+                your landlord sends it for signing.{" "}
+                <Link href="/portal/application" className="text-primary hover:underline">
+                  View application status
+                </Link>
+              </>
+            ) : (
+              "No lease on file yet. Contact your landlord if you believe this is an error."
+            )}
           </CardContent>
         </Card>
       </DashboardShell>
@@ -67,6 +62,8 @@ export default async function LeasePage() {
 
   const { lease } = data;
   const leaseDocuments = await getDocumentsForEntity("lease", lease.id);
+  const documentUrl =
+    lease.documentUrl ?? leaseDocuments[0]?.url ?? null;
   const keycodes = lease.keycodes
     ? (() => {
         try {
@@ -81,16 +78,37 @@ export default async function LeasePage() {
     <DashboardShell
       title="PlayaStays"
       subtitle="Lease & Documents"
-      navItems={tenantNav}
+      navItems={navItems}
       userName={session.user.name}
     >
       <div className="space-y-6">
-        {(lease.status === "draft" || lease.status === "sent") && (
+        {lease.status === "draft" && (
           <Card className="border-amber-200 bg-amber-50/50">
             <CardContent className="py-4 text-sm">
-              {lease.status === "draft"
-                ? "Your lease is being prepared. Documents will appear here once your landlord sends it for signing."
-                : "Your lease has been sent. Review and sign the documents below when ready."}
+              Your lease is being prepared. You will receive an email when it is
+              ready to sign.
+            </CardContent>
+          </Card>
+        )}
+
+        {lease.status === "sent" && (
+          <LeaseSignForm
+            leaseId={lease.id}
+            propertyCode={lease.propertyCode}
+            tenantName={lease.tenantName ?? session.user.name ?? "Tenant"}
+            startDate={lease.startDate}
+            endDate={lease.endDate}
+            monthlyRent={lease.monthlyRent}
+            securityDeposit={lease.securityDeposit}
+            documentUrl={documentUrl}
+          />
+        )}
+
+        {lease.status === "signed" && role === "prospect" && (
+          <Card className="border-green-200 bg-green-50/50">
+            <CardContent className="py-4 text-sm">
+              Lease signed — thank you! Your landlord will confirm move-in and
+              activate your tenant account.
             </CardContent>
           </Card>
         )}
@@ -111,8 +129,8 @@ export default async function LeasePage() {
                 calle: lease.calle,
                 colonia: lease.colonia,
                 ciudad: lease.ciudad,
-                estado: "",
-                cp: "",
+                estado: lease.estado ?? "",
+                cp: lease.cp ?? "",
               })}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -133,17 +151,18 @@ export default async function LeasePage() {
                 <div>
                   <span className="text-muted-foreground">Signed: </span>
                   {new Date(lease.signedAt).toLocaleDateString("en-US")}
+                  {lease.tenantSignedName && ` by ${lease.tenantSignedName}`}
                 </div>
               )}
             </div>
-            {lease.documentUrl && leaseDocuments.length === 0 && (
+            {documentUrl && lease.status !== "sent" && (
               <a
-                href={lease.documentUrl}
+                href={documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block text-primary hover:underline"
               >
-                Download lease document
+                {lease.status === "signed" ? "Download signed lease" : "View lease document"}
               </a>
             )}
           </CardContent>
@@ -156,12 +175,12 @@ export default async function LeasePage() {
           title="Lease documents"
           description={
             leaseDocuments.length === 0 && !lease.documentUrl
-              ? "Your landlord will upload the signed lease and related files here."
-              : "Signed lease and related files from your landlord."
+              ? "Your landlord will upload lease documents here."
+              : "Lease files from your landlord."
           }
         />
 
-        {keycodes && (
+        {keycodes && role === "tenant" && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Access / Keycodes</CardTitle>

@@ -300,6 +300,10 @@ export const leases = pgTable("leases", {
   securityDeposit: integer("security_deposit").notNull(),
   documentUrl: text("document_url"),
   signedAt: timestamp("signed_at"),
+  sentAt: timestamp("sent_at"),
+  tenantSignedName: text("tenant_signed_name"),
+  /** PNG data URL captured at signing */
+  tenantSignature: text("tenant_signature"),
   status: text("status").$type<LeaseStatus>().notNull().default("draft"),
   renewalAlertSent: boolean("renewal_alert_sent").notNull().default(false),
   ...timestamps,
