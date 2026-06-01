@@ -21,7 +21,7 @@ import {
   getProspectByUserId,
 } from "@/lib/queries/applications";
 import { getDocumentsForEntity } from "@/lib/queries/documents";
-import { recordAuditLog } from "@/lib/audit/log";
+import { recordStageChangeInternal } from "@/lib/actions/application-stage";
 import { hasRequiredScreeningDocuments } from "@/lib/utils/screening-documents";
 import {
   applicationReviewSchema,
@@ -61,22 +61,13 @@ async function recordStageChange(
   changedById: string,
   notes?: string
 ) {
-  await db.insert(applicationStageHistory).values({
+  await recordStageChangeInternal(
     applicationId,
     fromStage,
     toStage,
     changedById,
-    notes,
-  });
-
-  await recordAuditLog({
-    actorId: changedById,
-    action: "application.stage_changed",
-    entityType: "application",
-    entityId: applicationId,
-    summary: `Application stage changed from ${fromStage ?? "new"} to ${toStage}`,
-    metadata: { fromStage, toStage, notes: notes ?? null },
-  });
+    notes
+  );
 }
 
 export async function saveProspectProfile(
@@ -321,9 +312,12 @@ export async function updateApplicationReview(
     }
   }
 
+  revalidatePath("/landlord/pipeline");
+  revalidatePath("/agent/pipeline");
   revalidatePath("/landlord/prospects");
   revalidatePath(`/landlord/prospects/${applicationId}`);
   revalidatePath(`/agent/prospects/${applicationId}`);
+  revalidatePath("/agent/prospects");
   revalidatePath("/portal/application");
   return { success: "Application updated." };
 }
@@ -383,6 +377,8 @@ export async function updateApplicationByAgent(
   revalidatePath(`/agent/prospects/${applicationId}`);
   revalidatePath("/agent/prospects");
   revalidatePath(`/landlord/prospects/${applicationId}`);
+  revalidatePath("/landlord/pipeline");
+  revalidatePath("/agent/pipeline");
   revalidatePath("/portal/application");
   return { success: "Application updated." };
 }

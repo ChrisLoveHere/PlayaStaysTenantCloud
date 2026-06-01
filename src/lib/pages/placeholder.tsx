@@ -39,6 +39,7 @@ export async function PlaceholderPage({
 
 export const landlordNav: NavItem[] = [
   { href: "/landlord", label: "Overview" },
+  { href: "/landlord/pipeline", label: "Pipeline" },
   { href: "/landlord/properties", label: "Properties" },
   { href: "/landlord/prospects", label: "Prospects" },
   { href: "/landlord/showings", label: "Showings" },
@@ -53,6 +54,7 @@ export const landlordNav: NavItem[] = [
 
 export const agentNav: NavItem[] = [
   { href: "/agent", label: "Overview" },
+  { href: "/agent/pipeline", label: "Pipeline" },
   { href: "/agent/properties", label: "Listings" },
   { href: "/agent/showings", label: "My Showings" },
   { href: "/agent/prospects", label: "My Prospects" },

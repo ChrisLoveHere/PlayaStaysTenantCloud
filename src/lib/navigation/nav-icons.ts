@@ -10,11 +10,13 @@ import {
   Users,
   Wrench,
   Settings,
+  Kanban,
   type LucideIcon,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   "/landlord": LayoutDashboard,
+  "/landlord/pipeline": Kanban,
   "/landlord/properties": Building2,
   "/landlord/prospects": ClipboardList,
   "/landlord/showings": CalendarDays,
@@ -26,6 +28,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "/landlord/commissions": Banknote,
   "/landlord/settings": Settings,
   "/agent": LayoutDashboard,
+  "/agent/pipeline": Kanban,
   "/agent/properties": Building2,
   "/agent/showings": CalendarDays,
   "/agent/prospects": ClipboardList,
